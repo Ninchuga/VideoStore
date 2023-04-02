@@ -7,15 +7,13 @@ using System.Reflection;
 
 try
 {
-    
-
     var builder = WebApplication.CreateBuilder(args);
+    builder.Logging.ClearProviders(); // remove default logging providers
+    builder.Logging.AddSerilog(LoggingConfiguration.CreateLogger(builder.Environment));
     var configuration = GetConfiguration(builder.Environment);
-    Log.Logger = CreateSerilogLogger(configuration);
 
     Log.Information("Configuring web host ({ApplicationContext})...", Program.AppName);
-
-    builder.Host.UseSerilog();
+    
     builder.Services.AddDbContext<MovieContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("OrderingConnectionString"), option =>
                 {
@@ -85,21 +83,6 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
     //}
 
     return builder.Build();
-}
-
-Serilog.ILogger CreateSerilogLogger(IConfiguration configuration)
-{
-    //var seqServerUrl = configuration["Serilog:SeqServerUrl"];
-    //var logstashUrl = configuration["Serilog:LogstashgUrl"];
-    return new LoggerConfiguration()
-        .MinimumLevel.Verbose()
-        .Enrich.WithProperty("ApplicationContext", Program.AppName)
-        .Enrich.FromLogContext()
-        .WriteTo.Console()
-        //.WriteTo.Seq(string.IsNullOrWhiteSpace(seqServerUrl) ? "http://seq" : seqServerUrl)
-        //.WriteTo.Http(string.IsNullOrWhiteSpace(logstashUrl) ? "http://logstash:8080" : logstashUrl, null)
-        //.ReadFrom.Configuration(configuration)
-        .CreateLogger();
 }
 
 public partial class Program
