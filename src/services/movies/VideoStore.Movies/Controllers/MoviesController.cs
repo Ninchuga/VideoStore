@@ -55,11 +55,10 @@ namespace VideoStore.Movies.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutMovie(int id, Movie movie)
         {
-            if (id != movie.Id)
-            {
+            if (id == 0)
                 return BadRequest();
-            }
 
+            movie.Id = id;
             _dbContext.Entry(movie).State = EntityState.Modified;
 
             try
