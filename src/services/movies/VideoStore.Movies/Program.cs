@@ -4,6 +4,7 @@ using VideoStore.Shared;
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using VideoStore.Movies.Repositories;
 
 try
 {
@@ -34,6 +35,8 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
+
+    builder.Services.AddTransient<IMovieRepository, MovieRepository>();
 
     Log.Information("Starting web host ({ApplicationContext})...", Program.AppName);
 

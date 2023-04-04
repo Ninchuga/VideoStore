@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using VideoStore.Movies.Infrastrucutre;
+using VideoStore.Movies.DTOs;
+using VideoStore.Movies.Extensions;
 using VideoStore.Movies.Models;
+using VideoStore.Movies.Repositories;
 
 namespace VideoStore.Movies.Controllers
 {
@@ -9,100 +11,70 @@ namespace VideoStore.Movies.Controllers
     [ApiController]
     public class MoviesController : ControllerBase
     {
-        private readonly MovieContext _dbContext;
+        private readonly IMovieRepository _movieRepository;
+        private readonly ILogger<MoviesController> _logger;
 
-        public MoviesController(MovieContext dbContext)
+        public MoviesController(IMovieRepository movieRepository, ILogger<MoviesController> logger)
         {
-            _dbContext = dbContext;
+            _movieRepository = movieRepository;
+            _logger = logger;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
+        public async Task<ActionResult<IEnumerable<MovieDTO>>> GetMovies()
         {
-            if (_dbContext.Movies == null)
-            {
-                return NotFound();
-            }
-            return await _dbContext.Movies.ToListAsync();
+            var movies = await _movieRepository.GetMovies();
+            return movies.Any() ? movies.ToDtos() : NotFound();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Movie>> GetMovie(int id)
+        public async Task<ActionResult<MovieDTO>> GetMovie(int id)
         {
-            if (_dbContext.Movies == null)
-            {
-                return NotFound();
-            }
-            var movie = await _dbContext.Movies.FindAsync(id);
-
-            if (movie == null)
-            {
-                return NotFound();
-            }
-
-            return movie;
+            var movie = await _movieRepository.GetMovieBy(id);
+            return movie is null ? NotFound() : movie.ToDto();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Movie>> PostMovie(Movie movie)
+        public async Task<ActionResult<Movie>> AddMovie(MovieDTO movie)
         {
-            _dbContext.Movies.Add(movie);
-            await _dbContext.SaveChangesAsync();
+            _movieRepository.AddMovie(movie.ToEntity());
+            await _movieRepository.SaveChanges();
 
-            return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
+            return Ok();
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMovie(int id, Movie movie)
+        public async Task<IActionResult> PutMovie(int id, MovieDTO movie)
         {
             if (id == 0)
                 return BadRequest();
 
-            movie.Id = id;
-            _dbContext.Entry(movie).State = EntityState.Modified;
+            _movieRepository.UpdateMovie(movie.ToEntity(id));
 
             try
             {
-                await _dbContext.SaveChangesAsync();
+                await _movieRepository.SaveChanges();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!MovieExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                _logger.LogError($"{nameof(DbUpdateConcurrencyException)} occurred for movie with id {id}.");
+                throw;
             }
 
-            return NoContent();
+            return Ok();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMovie(int id)
         {
-            if (_dbContext.Movies == null)
-            {
+            var movie = await _movieRepository.GetMovieBy(id);
+            if (movie is null)
                 return NotFound();
-            }
 
-            var movie = await _dbContext.Movies.FindAsync(id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
+            _movieRepository.DeleteMovie(movie);
+            await _movieRepository.SaveChanges();
 
-            _dbContext.Movies.Remove(movie);
-            await _dbContext.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool MovieExists(long id)
-        {
-            return (_dbContext.Movies?.Any(e => e.Id == id)).GetValueOrDefault();
+            return Ok();
         }
     }
 }
