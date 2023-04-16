@@ -5,6 +5,7 @@ using VideoStore.Movies.DTOs;
 using VideoStore.Movies.Extensions;
 using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Movies.Models;
+using VideoStore.Movies.Requests;
 
 namespace VideoStore.Movies.Controllers
 {
@@ -75,6 +76,20 @@ namespace VideoStore.Movies.Controllers
 
             _movieRepository.DeleteMovie(movie);
             await _movieRepository.SaveChanges();
+
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("buyMovie")]
+        public async Task<IActionResult> BuyMovie([FromBody] BuyMovieRequest request)
+        {
+            // get all the data and send the request to Ordering/Subscription service via message bus
+            string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals("email", StringComparison.OrdinalIgnoreCase))?.Value;
+            string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals("sub", StringComparison.OrdinalIgnoreCase))?.Value;
+            string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals("userId", StringComparison.OrdinalIgnoreCase))?.Value;
+
+            // publish the message
 
             return Ok();
         }
