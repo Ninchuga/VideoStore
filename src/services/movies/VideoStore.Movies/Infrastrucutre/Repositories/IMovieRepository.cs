@@ -1,10 +1,10 @@
 ﻿using VideoStore.Movies.Models;
 
-namespace VideoStore.Movies.Repositories
+namespace VideoStore.Movies.Infrastrucutre.Repositories
 {
     public interface IMovieRepository
     {
-        Task<List<Movie>> GetMovies();
+        Task<IReadOnlyList<Movie>> GetMovies();
         Task<Movie> GetMovieBy(int id);
         void DeleteMovie(Movie movie);
         void AddMovie(Movie movie);

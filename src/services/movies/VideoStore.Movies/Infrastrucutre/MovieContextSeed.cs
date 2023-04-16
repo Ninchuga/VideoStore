@@ -32,6 +32,6 @@ namespace VideoStore.Movies.Infrastrucutre
                     ReleaseDate = new DateTime(1985, 2, 21)
                 }
             };
+        }
     }
-}
 }

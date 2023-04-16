@@ -1,27 +1,27 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VideoStore.Movies.Models;
+using VideoStore.IdentityService.Model;
 
-namespace VideoStore.Movies.Infrastrucutre
+namespace VideoStore.IdentityService.Infrastrucutre
 {
-    public class MovieContext : DbContext
+    public class IdentityContext : DbContext
     {
-        public MovieContext(DbContextOptions<MovieContext> options)
+        public IdentityContext(DbContextOptions<IdentityContext> options)
             : base(options)
         {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Movie>(action =>
+            modelBuilder.Entity<User>(action =>
             {
-                action.HasKey(movie => movie.Id);
-                action.Property(movie => movie.Id)
+                action.HasKey( user =>  user.Id);
+                action.Property( user => user.Id)
                     .ValueGeneratedOnAdd()
                     .IsRequired();
             });
         }
 
-        public DbSet<Movie> Movies { get; set; } = null!;
+        public DbSet<User> Users { get; set; } = null!;
 
         public async Task<int> SaveChanges(CancellationToken cancellationToken = default)
         {

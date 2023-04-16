@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VideoStore.Movies.DTOs;
 using VideoStore.Movies.Extensions;
+using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Movies.Models;
-using VideoStore.Movies.Repositories;
 
 namespace VideoStore.Movies.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MoviesController : ControllerBase
@@ -24,14 +26,14 @@ namespace VideoStore.Movies.Controllers
         public async Task<ActionResult<IEnumerable<MovieDTO>>> GetMovies()
         {
             var movies = await _movieRepository.GetMovies();
-            return movies.Any() ? movies.ToDtos() : NotFound();
+            return movies.Any() ? Ok(movies.ToDtos()) : NotFound();
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<MovieDTO>> GetMovie(int id)
         {
             var movie = await _movieRepository.GetMovieBy(id);
-            return movie is null ? NotFound() : movie.ToDto();
+            return movie is null ? NotFound() : Ok(movie.ToDto());
         }
 
         [HttpPost]
@@ -57,7 +59,7 @@ namespace VideoStore.Movies.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                _logger.LogError($"{nameof(DbUpdateConcurrencyException)} occurred for movie with id {id}.");
+                _logger.LogError("{ExceptionName} occurred for movie with id {MovieId}.", nameof(DbUpdateConcurrencyException), id);
                 throw;
             }
 

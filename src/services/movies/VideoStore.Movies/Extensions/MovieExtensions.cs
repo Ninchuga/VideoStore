@@ -17,7 +17,7 @@ namespace VideoStore.Movies.Extensions
         public static MovieDTO ToDto(this Movie movie) =>
             new() { Genre = movie.Genre, ReleaseDate = movie.ReleaseDate, Title = movie.Title };
 
-        public static List<MovieDTO> ToDtos(this IEnumerable<Movie> movies) =>
+        public static IReadOnlyList<MovieDTO> ToDtos(this IEnumerable<Movie> movies) =>
             movies.Select(x => x.ToDto()).ToList();
     }
 }

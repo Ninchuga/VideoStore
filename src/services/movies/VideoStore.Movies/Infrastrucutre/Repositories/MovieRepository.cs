@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VideoStore.Movies.Infrastrucutre;
 using VideoStore.Movies.Models;
 
-namespace VideoStore.Movies.Repositories
+namespace VideoStore.Movies.Infrastrucutre.Repositories
 {
     public class MovieRepository : IMovieRepository
     {
@@ -25,7 +24,7 @@ namespace VideoStore.Movies.Repositories
         public async Task<Movie> GetMovieBy(int id) =>
             await _dbContext.Movies.FindAsync(id);
 
-        public async Task<List<Movie>> GetMovies() =>
+        public async Task<IReadOnlyList<Movie>> GetMovies() =>
             await _dbContext.Movies.ToListAsync();
 
         public async Task SaveChanges() =>

@@ -4,41 +4,33 @@ using VideoStore.Shared;
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using VideoStore.Movies.Repositories;
+using VideoStore.Movies.Infrastrucutre.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using VideoStore.Movies.Models;
+using Microsoft.OpenApi.Models;
 
+const string JwtConfigurationName = "JWT";
+const string MoviesConnectionStringKey = "MoviesConnectionString";
+var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders(); // remove default logging providers
 try
 {
-    var builder = WebApplication.CreateBuilder(args);
-    builder.Logging.ClearProviders(); // remove default logging providers
     builder.Logging.AddSerilog(LoggingConfiguration.CreateLogger(builder.Environment));
     var configuration = GetConfiguration(builder.Environment);
 
-    Log.Information("Configuring web host ({ApplicationContext})...", Program.AppName);
-    
-    builder.Services.AddDbContext<MovieContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("OrderingConnectionString"), option =>
-                {
-                    option.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                    // EF connection resiliency
-                    option.EnableRetryOnFailure(
-                        maxRetryCount: 10,
-                        maxRetryDelay: TimeSpan.FromSeconds(10),
-                        errorNumbersToAdd: null);
-                }));
+    Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    builder.Host.MigrateDatabase<MovieContext>(builder.Services, (context, services) =>
-    {
-        var logger = services.GetService<ILogger<MovieContextSeed>>();
-        MovieContextSeed.SeedAsync(context, logger).Wait();
-    });
-
+    ConfigureDbContext(builder, configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-
+    ConfigureSwagger(builder);
     builder.Services.AddTransient<IMovieRepository, MovieRepository>();
+    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(JwtConfigurationName));
+    ConfigureAuthentication(builder);
 
-    Log.Information("Starting web host ({ApplicationContext})...", Program.AppName);
+    Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
     var app = builder.Build();
 
@@ -46,11 +38,13 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/V1/swagger.json", "Movies WebAPI");
+        });
     }
 
-    app.UseHttpsRedirection();
-
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
@@ -59,7 +53,7 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Program terminated unexpectedly ({ApplicationContext})!", Program.AppName);
+    Log.Fatal(ex, "Program terminated unexpectedly ({ApplicationContext})!", builder.Environment.ApplicationName);
 }
 finally
 {
@@ -88,9 +82,81 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
     return builder.Build();
 }
 
-public partial class Program
+void ConfigureDbContext(WebApplicationBuilder builder, IConfiguration configuration)
 {
-    public static string Namespace = typeof(Startup).Namespace;
-    public static string AppName = Namespace.Substring(Namespace.LastIndexOf('.', Namespace.LastIndexOf('.') - 1) + 1);
+    builder.Services.AddDbContext<MovieContext>(options =>
+                    options.UseSqlServer(configuration.GetConnectionString(MoviesConnectionStringKey), option =>
+                    {
+                        option.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
+                        // EF connection resiliency
+                        option.EnableRetryOnFailure(
+                            maxRetryCount: 10,
+                            maxRetryDelay: TimeSpan.FromSeconds(10),
+                            errorNumbersToAdd: null);
+                    }));
+
+    builder.Host.MigrateDatabase<MovieContext>(builder.Services, (context, services) =>
+    {
+        var logger = services.GetService<ILogger<MovieContextSeed>>();
+        MovieContextSeed.SeedAsync(context, logger).Wait();
+    });
 }
 
+void ConfigureAuthentication(WebApplicationBuilder builder)
+{
+    var jwtConfig = builder.Configuration.GetSection(JwtConfigurationName).Get<JwtConfig>();
+
+    builder.Services.AddAuthentication(opt => 
+        {
+            opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true; // stores the bearer token in HTTP Context, so we can use the token later in the controller
+            options.TokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidAudience = jwtConfig?.Audience,
+                ValidIssuer = jwtConfig?.Issuer,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig?.Secret))
+            };
+        });
+}
+
+void ConfigureSwagger(WebApplicationBuilder builder)
+{
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("V1", new OpenApiInfo
+        {
+            Version = "V1",
+            Title = "Movie API",
+            Description = "Movies WebAPI"
+        });
+        options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+        {
+            Scheme = JwtBearerDefaults.AuthenticationScheme,
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Name = "Authorization",
+            Description = "Bearer Authentication with JWT Token",
+            Type = SecuritySchemeType.Http
+        });
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme {
+                    Reference = new OpenApiReference {
+                        Id = JwtBearerDefaults.AuthenticationScheme,
+                            Type = ReferenceType.SecurityScheme
+                    }
+                },
+                new List <string>()
+            }
+        });
+    });
+}
