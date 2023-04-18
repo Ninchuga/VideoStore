@@ -25,7 +25,7 @@ namespace VideoStore.Movies.Infrastrucutre.Repositories
             await _dbContext.Movies.FindAsync(id);
 
         public async Task<IReadOnlyList<Movie>> GetMovies() =>
-            await _dbContext.Movies.ToListAsync();
+            await _dbContext.Movies.AsNoTracking().ToListAsync();
 
         public async Task SaveChanges() =>
             await _dbContext.SaveChangesAsync();

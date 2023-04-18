@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using VideoStore.Bus.Messages;
+using VideoStore.Movies.Constants;
 using VideoStore.Movies.DTOs;
 using VideoStore.Movies.Extensions;
 using VideoStore.Movies.Infrastrucutre.Repositories;
@@ -81,15 +83,24 @@ namespace VideoStore.Movies.Controllers
         }
 
         [HttpPost]
-        [Route("buyMovie")]
-        public async Task<IActionResult> BuyMovie([FromBody] BuyMovieRequest request)
+        [Route("orderMovie")]
+        public async Task<IActionResult> BuyMovie([FromBody] OrderMovieRequest request)
         {
             // get all the data and send the request to Ordering/Subscription service via message bus
-            string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals("email", StringComparison.OrdinalIgnoreCase))?.Value;
-            string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals("sub", StringComparison.OrdinalIgnoreCase))?.Value;
-            string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals("userId", StringComparison.OrdinalIgnoreCase))?.Value;
+            string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
+            string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals(TokenClaimTypes.Subject, StringComparison.OrdinalIgnoreCase))?.Value;
+            string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals(TokenClaimTypes.UserId, StringComparison.OrdinalIgnoreCase))?.Value;
+
+            var movie = await _movieRepository.GetMovieBy(request.MovieId);
+            if (movie is null)
+                return NotFound($"Movie with id: {request.MovieId} was not found.");
+
+            if (!int.TryParse(userId, out int parsedUserId))
+                return BadRequest($"User id {userId} is not a valid integer value.");
 
             // publish the message
+            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userEmail, userName, request.MovieId, movie.Title);
+
 
             return Ok();
         }
