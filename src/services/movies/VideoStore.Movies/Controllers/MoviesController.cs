@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VideoStore.Bus.Messages;
@@ -18,11 +19,13 @@ namespace VideoStore.Movies.Controllers
     {
         private readonly IMovieRepository _movieRepository;
         private readonly ILogger<MoviesController> _logger;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public MoviesController(IMovieRepository movieRepository, ILogger<MoviesController> logger)
+        public MoviesController(IMovieRepository movieRepository, ILogger<MoviesController> logger, IPublishEndpoint publishEndpoint)
         {
             _movieRepository = movieRepository;
             _logger = logger;
+            _publishEndpoint = publishEndpoint;
         }
 
         [HttpGet]
@@ -87,9 +90,9 @@ namespace VideoStore.Movies.Controllers
         public async Task<IActionResult> BuyMovie([FromBody] OrderMovieRequest request)
         {
             // get all the data and send the request to Ordering/Subscription service via message bus
-            string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
-            string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals(TokenClaimTypes.Subject, StringComparison.OrdinalIgnoreCase))?.Value;
-            string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals(TokenClaimTypes.UserId, StringComparison.OrdinalIgnoreCase))?.Value;
+            string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
+            string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Subject, StringComparison.OrdinalIgnoreCase))?.Value;
+            string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.UserId, StringComparison.OrdinalIgnoreCase))?.Value;
 
             var movie = await _movieRepository.GetMovieBy(request.MovieId);
             if (movie is null)
@@ -99,8 +102,11 @@ namespace VideoStore.Movies.Controllers
                 return BadRequest($"User id {userId} is not a valid integer value.");
 
             // publish the message
-            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userEmail, userName, request.MovieId, movie.Title);
-
+            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, request.MovieId, movie.Title)
+            {
+                CorrelationId = Guid.NewGuid()
+            };
+            await _publishEndpoint.Publish(orderMovieMessage);
 
             return Ok();
         }

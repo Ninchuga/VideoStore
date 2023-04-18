@@ -12,19 +12,19 @@ namespace VideoStore.Movies.Infrastrucutre.Repositories
             _dbContext = dbContext;
         }
 
-        public void AddMovie(Order movie) =>
+        public void AddOrder(Order movie) =>
             _dbContext.Orders.Add(movie);
 
-        public void UpdateMovie(Order movie) =>
+        public void UpdateOrder(Order movie) =>
             _dbContext.Entry(movie).State = EntityState.Modified;
 
-        public void DeleteMovie(Order movie) =>
+        public void DeleteOrder(Order movie) =>
             _dbContext.Orders.Remove(movie);
 
-        public async Task<Order> GetMovieBy(int id) =>
+        public async Task<Order> GetOrderBy(int id) =>
             await _dbContext.Orders.FindAsync(id);
 
-        public async Task<IReadOnlyList<Order>> GetMovies() =>
+        public async Task<IReadOnlyList<Order>> GetOrders() =>
             await _dbContext.Orders.AsNoTracking().ToListAsync();
 
         public async Task SaveChanges() =>

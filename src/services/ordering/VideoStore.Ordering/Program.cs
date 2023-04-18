@@ -1,19 +1,23 @@
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
 using System.Text;
+using VideoStore.Bus;
 using VideoStore.Movies.Infrastrucutre;
 using VideoStore.Movies.Infrastrucutre.Repositories;
+using VideoStore.Ordering.Constants;
+using VideoStore.Ordering.Handlers;
 using VideoStore.Ordering.Models;
 using VideoStore.Shared;
 
-const string JwtConfigurationName = "JWT";
-const string OrderingConnectionStringKey = "OrderingConnectionString";
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders(); // remove default logging providers
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear(); // clear Microsoft changed claim names from dictionary and preserve original ones
 
 try
 {
@@ -27,8 +31,9 @@ try
     builder.Services.AddEndpointsApiExplorer();
     ConfigureSwagger(builder);
     builder.Services.AddTransient<IOrderingRepository, OrderingRepository>();
-    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(JwtConfigurationName));
+    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(OrderingConstants.JwtConfigurationName));
     ConfigureAuthentication(builder);
+    ConfigureServiceBus(builder, configuration);
 
     Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
@@ -38,9 +43,13 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/V1/swagger.json", "Ordering WebAPI");
+        });
     }
 
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
@@ -81,7 +90,7 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
 void ConfigureDbContext(WebApplicationBuilder builder, IConfiguration configuration)
 {
     builder.Services.AddDbContext<OrderingContext>(options =>
-                    options.UseSqlServer(configuration.GetConnectionString(OrderingConnectionStringKey), option =>
+                    options.UseSqlServer(configuration.GetConnectionString(OrderingConstants.OrderingConnectionStringKey), option =>
                     {
                         option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
                         // EF connection resiliency
@@ -99,8 +108,8 @@ void ConfigureSwagger(WebApplicationBuilder builder)
         options.SwaggerDoc("V1", new OpenApiInfo
         {
             Version = "V1",
-            Title = "Movie API",
-            Description = "Movies WebAPI"
+            Title = "Ordering API",
+            Description = "Ordering WebAPI"
         });
         options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
         {
@@ -128,7 +137,7 @@ void ConfigureSwagger(WebApplicationBuilder builder)
 
 void ConfigureAuthentication(WebApplicationBuilder builder)
 {
-    var jwtConfig = builder.Configuration.GetSection(JwtConfigurationName).Get<JwtConfig>();
+    var jwtConfig = builder.Configuration.GetSection(OrderingConstants.JwtConfigurationName).Get<JwtConfig>();
 
     builder.Services.AddAuthentication(opt =>
     {
@@ -149,4 +158,23 @@ void ConfigureAuthentication(WebApplicationBuilder builder)
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig?.Secret))
             };
         });
+}
+
+static void ConfigureServiceBus(WebApplicationBuilder builder, IConfiguration configuration)
+{
+    builder.Services.AddMassTransit(config =>
+    {
+        config.AddConsumer<OrderMovieMessageHandler>();
+
+        config.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(configuration.GetConnectionString("AzureServiceBusConnectionString"));
+
+            // This configures message queue (not topic)
+            cfg.ReceiveEndpoint(ServiceBusConstants.OrderMovieQueueName, endpoint =>
+            {
+                endpoint.Consumer<OrderMovieMessageHandler>(context);
+            });
+        });
+    });
 }

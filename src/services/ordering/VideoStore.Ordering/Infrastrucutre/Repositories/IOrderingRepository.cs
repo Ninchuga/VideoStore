@@ -4,11 +4,11 @@ namespace VideoStore.Movies.Infrastrucutre.Repositories
 {
     public interface IOrderingRepository
     {
-        Task<IReadOnlyList<Order>> GetMovies();
-        Task<Order> GetMovieBy(int id);
-        void DeleteMovie(Order movie);
-        void AddMovie(Order movie);
-        void UpdateMovie(Order movie);
+        Task<IReadOnlyList<Order>> GetOrders();
+        Task<Order> GetOrderBy(int id);
+        void DeleteOrder(Order movie);
+        void AddOrder(Order movie);
+        void UpdateOrder(Order movie);
 
         Task SaveChanges();
     }

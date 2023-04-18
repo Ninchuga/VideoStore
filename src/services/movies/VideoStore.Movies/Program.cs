@@ -10,11 +10,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using VideoStore.Movies.Models;
 using Microsoft.OpenApi.Models;
+using MassTransit;
+using System.IdentityModel.Tokens.Jwt;
+using VideoStore.Movies.Constants;
 
-const string JwtConfigurationName = "JWT";
-const string MoviesConnectionStringKey = "MoviesConnectionString";
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders(); // remove default logging providers
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear(); // clear Microsoft changed claim names from dictionary and preserve original ones
 try
 {
     builder.Logging.AddSerilog(LoggingConfiguration.CreateLogger(builder.Environment));
@@ -27,8 +29,9 @@ try
     builder.Services.AddEndpointsApiExplorer();
     ConfigureSwagger(builder);
     builder.Services.AddTransient<IMovieRepository, MovieRepository>();
-    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(JwtConfigurationName));
+    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(MoviesConstants.JwtConfigurationName));
     ConfigureAuthentication(builder);
+    ConfigureServiceBus(builder, configuration);
 
     Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
@@ -85,7 +88,7 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
 void ConfigureDbContext(WebApplicationBuilder builder, IConfiguration configuration)
 {
     builder.Services.AddDbContext<MovieContext>(options =>
-                    options.UseSqlServer(configuration.GetConnectionString(MoviesConnectionStringKey), option =>
+                    options.UseSqlServer(configuration.GetConnectionString(MoviesConstants.MoviesConnectionStringKey), option =>
                     {
                         option.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
                         // EF connection resiliency
@@ -104,7 +107,7 @@ void ConfigureDbContext(WebApplicationBuilder builder, IConfiguration configurat
 
 void ConfigureAuthentication(WebApplicationBuilder builder)
 {
-    var jwtConfig = builder.Configuration.GetSection(JwtConfigurationName).Get<JwtConfig>();
+    var jwtConfig = builder.Configuration.GetSection(MoviesConstants.JwtConfigurationName).Get<JwtConfig>();
 
     builder.Services.AddAuthentication(opt => 
         {
@@ -157,6 +160,17 @@ void ConfigureSwagger(WebApplicationBuilder builder)
                 },
                 new List <string>()
             }
+        });
+    });
+}
+
+void ConfigureServiceBus(WebApplicationBuilder builder, IConfiguration configuration)
+{
+    builder.Services.AddMassTransit(config =>
+    {
+        config.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(configuration.GetConnectionString(MoviesConstants.AzureServiceBusConnectionStringKey));
         });
     });
 }
