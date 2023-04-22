@@ -18,13 +18,15 @@
 
     public class Movie
     {
-        public Movie(int id, string title)
+        public Movie(int id, string title, decimal price)
         {
             Id = id;
             Title = title;
+            Price = price;
         }
 
         public int Id { get; }
         public string Title { get; }
+        public decimal Price { get; }
     }
 }

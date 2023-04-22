@@ -24,8 +24,8 @@ namespace VideoStore.Ordering.Handlers
             {
                 UserEmail = message.UserEmail,
                 UserName = message.UserName,
-                Price = 100, 
-                Movies = message.Movies.Select(movie => new Models.Movie { MovieRefId = movie.Id, MovieTitle = movie.Title }).ToList()
+                Price = message.Movies.Sum(movie => movie.Price),
+                Movies = MapToMoviesFrom(message.Movies)
             };
 
             try
@@ -38,6 +38,15 @@ namespace VideoStore.Ordering.Handlers
                 _logger.LogError("Unexpected error occurred while handling the movie order with message: {ErrorMessage}", ex.Message);
                 throw;
             }
+        }
+
+        private static List<Models.Movie> MapToMoviesFrom(IEnumerable<Bus.Messages.Movie> movies)
+        {
+            return movies.Select(movie => new Models.Movie 
+            { 
+                MovieRefId = movie.Id, 
+                MovieTitle = movie.Title
+            }).ToList();
         }
     }
 }

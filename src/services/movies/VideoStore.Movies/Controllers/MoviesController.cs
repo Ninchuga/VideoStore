@@ -105,7 +105,7 @@ namespace VideoStore.Movies.Controllers
                 if (movie is null)
                     return NotFound($"Movie with id: {movieId} was not found.");
 
-                moviesToOrder.Add(new Bus.Messages.Movie(movie.Id, movie.Title));
+                moviesToOrder.Add(new Bus.Messages.Movie(movie.Id, movie.Title, movie.Price));
             }
 
             if (!int.TryParse(userId, out int parsedUserId))
