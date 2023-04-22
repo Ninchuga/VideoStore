@@ -22,11 +22,10 @@ namespace VideoStore.Ordering.Handlers
 
             var order = new Order
             {
-                MovieId = message.MovieId,
-                MovieTitle = message.MovieTitle,
                 UserEmail = message.UserEmail,
                 UserName = message.UserName,
-                Price = 100
+                Price = 100, 
+                Movies = message.Movies.Select(movie => new Models.Movie { MovieRefId = movie.Id, MovieTitle = movie.Title }).ToList()
             };
 
             try

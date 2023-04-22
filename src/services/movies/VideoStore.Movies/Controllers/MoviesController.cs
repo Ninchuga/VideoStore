@@ -7,8 +7,7 @@ using VideoStore.Movies.Constants;
 using VideoStore.Movies.DTOs;
 using VideoStore.Movies.Extensions;
 using VideoStore.Movies.Infrastrucutre.Repositories;
-using VideoStore.Movies.Models;
-using VideoStore.Movies.Requests;
+using Movie = VideoStore.Movies.Models.Movie;
 
 namespace VideoStore.Movies.Controllers
 {
@@ -86,23 +85,33 @@ namespace VideoStore.Movies.Controllers
         }
 
         [HttpPost]
-        [Route("orderMovie")]
-        public async Task<IActionResult> BuyMovie([FromBody] OrderMovieRequest request)
+        [Route("orderMovies")]
+        public async Task<IActionResult> BuyMovie([FromBody] IEnumerable<int> moviesId)
         {
-            // get all the data and send the request to Ordering/Subscription service via message bus
             string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
+            if(string.IsNullOrWhiteSpace(userEmail))
+                return BadRequest($"User email must have a value.");
+
             string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Subject, StringComparison.OrdinalIgnoreCase))?.Value;
+            if(string.IsNullOrWhiteSpace(userName))
+                return BadRequest($"User name must have a value.");
+
             string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.UserId, StringComparison.OrdinalIgnoreCase))?.Value;
 
-            var movie = await _movieRepository.GetMovieBy(request.MovieId);
-            if (movie is null)
-                return NotFound($"Movie with id: {request.MovieId} was not found.");
+            var moviesToOrder = new List<Bus.Messages.Movie>();
+            foreach (var movieId in moviesId)
+            {
+                var movie = await _movieRepository.GetMovieBy(movieId);
+                if (movie is null)
+                    return NotFound($"Movie with id: {movieId} was not found.");
+
+                moviesToOrder.Add(new Bus.Messages.Movie(movie.Id, movie.Title));
+            }
 
             if (!int.TryParse(userId, out int parsedUserId))
                 return BadRequest($"User id {userId} is not a valid integer value.");
 
-            // publish the message
-            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, request.MovieId, movie.Title)
+            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder)
             {
                 CorrelationId = Guid.NewGuid()
             };

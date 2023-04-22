@@ -2,19 +2,29 @@
 {
     public class OrderMovieMessage : BaseMessage
     {
-        public OrderMovieMessage(int userId, string userName, string userEmail, int movieId, string movieTitle)
+        public OrderMovieMessage(int userId, string userName, string userEmail, IEnumerable<Movie> movies)
         {
             UserId = userId;
             UserName = userName;
             UserEmail = userEmail;
-            MovieId = movieId;
-            MovieTitle = movieTitle;
+            Movies = movies;
         }
 
         public int UserId { get; }
         public string UserName { get; }
         public string UserEmail { get; }
-        public int MovieId { get; }
-        public string MovieTitle { get; }
+        public IEnumerable<Movie> Movies { get; }
+    }
+
+    public class Movie
+    {
+        public Movie(int id, string title)
+        {
+            Id = id;
+            Title = title;
+        }
+
+        public int Id { get; }
+        public string Title { get; }
     }
 }

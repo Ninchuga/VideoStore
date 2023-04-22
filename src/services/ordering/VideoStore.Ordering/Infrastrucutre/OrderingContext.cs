@@ -12,16 +12,30 @@ namespace VideoStore.Movies.Infrastrucutre
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Order>(action =>
+            modelBuilder.Entity<Order>(orderEntity =>
             {
-                action.HasKey(movie => movie.Id);
-                action.Property(movie => movie.Id)
+                orderEntity.HasKey(order => order.Id);
+                orderEntity.Property(order => order.Id)
                     .ValueGeneratedOnAdd()
                     .IsRequired();
+
+                orderEntity.OwnsMany(order => order.Movies,
+                builder =>
+                {
+                    builder.ToJson();
+                });
             });
+                
         }
 
-        public DbSet<Order> Orders { get; set; } = null!;
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder
+            .LogTo(Console.WriteLine, (_, level) => level == LogLevel.Information)
+            .EnableSensitiveDataLogging();
+        }
+
+        public DbSet<Order> Orders => Set<Order>();
 
         public async Task<int> SaveChanges(CancellationToken cancellationToken = default)
         {
