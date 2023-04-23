@@ -25,7 +25,9 @@ namespace VideoStore.Movies.Infrastrucutre
                     builder.ToJson();
                 });
             });
-                
+
+            modelBuilder.Entity<IdempotentConsumer>()
+                .HasKey(x => new { x.MessageId, x.Consumer });
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -36,6 +38,7 @@ namespace VideoStore.Movies.Infrastrucutre
         }
 
         public DbSet<Order> Orders => Set<Order>();
+        public DbSet<IdempotentConsumer> IdempotentConsumers => Set<IdempotentConsumer>();
 
         public async Task<int> SaveChanges(CancellationToken cancellationToken = default)
         {

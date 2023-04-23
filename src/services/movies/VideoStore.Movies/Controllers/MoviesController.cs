@@ -111,11 +111,13 @@ namespace VideoStore.Movies.Controllers
             if (!int.TryParse(userId, out int parsedUserId))
                 return BadRequest($"User id {userId} is not a valid integer value.");
 
-            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder)
+            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder);
+            await _publishEndpoint.Publish(orderMovieMessage, context =>
             {
-                CorrelationId = Guid.NewGuid()
-            };
-            await _publishEndpoint.Publish(orderMovieMessage);
+                context.MessageId = Guid.NewGuid();
+                context.CorrelationId = Guid.NewGuid();
+                context.TimeToLive = TimeSpan.FromMinutes(60); // if not consumed after this ttl, message will end up in dead-letter queue
+            });
 
             return Ok();
         }

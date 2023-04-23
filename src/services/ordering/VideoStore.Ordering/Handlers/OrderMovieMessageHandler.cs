@@ -9,35 +9,31 @@ namespace VideoStore.Ordering.Handlers
     {
         private readonly IOrderingRepository _orderingRepository;
         private readonly ILogger<OrderMovieMessageHandler> _logger;
+        private readonly IIdempotentMessageHandler<OrderMovieMessage> _idempotentMessageHandler;
 
-        public OrderMovieMessageHandler(IOrderingRepository orderingRepository, ILogger<OrderMovieMessageHandler> logger)
+        public OrderMovieMessageHandler(IOrderingRepository orderingRepository, ILogger<OrderMovieMessageHandler> logger, IIdempotentMessageHandler<OrderMovieMessage> idempotentMessageHandler)
         {
             _orderingRepository = orderingRepository;
             _logger = logger;
+            _idempotentMessageHandler = idempotentMessageHandler;
         }
 
         public async Task Consume(ConsumeContext<OrderMovieMessage> context)
         {
-            var message = context.Message;
+            await _idempotentMessageHandler.Handle(context, consumerName: nameof(OrderMovieMessageHandler), (dbContext) =>
+            {
+                var message = context.Message;
 
-            var order = new Order
-            {
-                UserEmail = message.UserEmail,
-                UserName = message.UserName,
-                Price = message.Movies.Sum(movie => movie.Price),
-                Movies = MapToMoviesFrom(message.Movies)
-            };
+                var order = new Order
+                {
+                    UserEmail = message.UserEmail,
+                    UserName = message.UserName,
+                    Price = message.Movies.Sum(movie => movie.Price),
+                    Movies = MapToMoviesFrom(message.Movies)
+                };
 
-            try
-            {
-                _orderingRepository.AddOrder(order);
-                await _orderingRepository.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Unexpected error occurred while handling the movie order with message: {ErrorMessage}", ex.Message);
-                throw;
-            }
+                dbContext.Orders.Add(order);
+            });
         }
 
         private static List<Models.Movie> MapToMoviesFrom(IEnumerable<Bus.Messages.Movie> movies)

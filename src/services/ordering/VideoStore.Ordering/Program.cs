@@ -32,6 +32,7 @@ try
     ConfigureSwagger(builder);
     builder.Services.AddTransient<IOrderingRepository, OrderingRepository>();
     builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(OrderingConstants.JwtConfigurationName));
+    builder.Services.AddTransient(typeof(IIdempotentMessageHandler<>), typeof(IdempotentMessageHandlerDecorator<>));
     ConfigureAuthentication(builder);
     ConfigureServiceBus(builder, configuration);
 
@@ -170,10 +171,31 @@ static void ConfigureServiceBus(WebApplicationBuilder builder, IConfiguration co
         {
             cfg.Host(configuration.GetConnectionString("AzureServiceBusConnectionString"));
 
+            // We can configure duplication and message retries on a global level for all queues and topics
+            //cfg.UseMessageRetry(r => r.Interval(retryCount: 3, TimeSpan.FromSeconds(5)));
+            //cfg.EnableDuplicateDetection(TimeSpan.FromMinutes(10)); // default is 10 minutes
+
             // This configures message queue (not topic)
             cfg.ReceiveEndpoint(ServiceBusConstants.OrderMovieQueueName, endpoint =>
             {
-                endpoint.Consumer<OrderMovieMessageHandler>(context);
+                endpoint.EnableDuplicateDetection(TimeSpan.FromMinutes(10)); // default is 10 minutes
+
+                // after specified number of retry attempts in case of exception
+                // message will be sent to _error queue
+                endpoint.UseMessageRetry(r =>
+                {
+                    r.Ignore<ArgumentNullException>();
+                    r.Interval(retryCount: 3, TimeSpan.FromSeconds(5));
+                });
+
+                endpoint.ConfigureConsumer<OrderMovieMessageHandler>(context);
+
+                endpoint.LockDuration = TimeSpan.FromMinutes(3); // defaults to 5
+
+                // How many times the transport will redeliver the message on negative acknowledgement
+                // This is different from retry, this is the transport redelivering the message to a receive endpoint
+                // before moving it to the dead letter
+                endpoint.MaxDeliveryCount = 3;
             });
         });
     });

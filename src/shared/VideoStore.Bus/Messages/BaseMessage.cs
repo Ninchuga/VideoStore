@@ -1,6 +1,6 @@
 ﻿namespace VideoStore.Bus.Messages
 {
-    public class BaseMessage
+    public record BaseMessage
     {
         public BaseMessage()
         {
@@ -14,8 +14,7 @@
             MessageCreationDateTime = creationDate;
         }
 
-        public Guid Id { get; private set; }
-        public Guid CorrelationId { get; set; }
-        public DateTime MessageCreationDateTime { get; private set; }
+        public Guid Id { get; init; }
+        public DateTime MessageCreationDateTime { get; init; }
     }
 }

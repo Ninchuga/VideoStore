@@ -6,10 +6,10 @@ namespace VideoStore.IdentityService.Infrastrucutre
     {
         public static async Task SeedAsync(IdentityContext context, ILogger<IdentityContextSeed>? logger)
         {
-            var movies = context.Users;
-            if (!movies.Any())
+            var users = context.Users;
+            if (!users.Any())
             {
-                movies.AddRange(GetPreconfiguredUsers());
+                users.AddRange(GetPreconfiguredUsers());
                 await context.SaveChanges();
                 logger?.LogInformation("Seed database associated with context {DbContextName}", nameof(IdentityContext));
             }
