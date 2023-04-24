@@ -1,20 +1,15 @@
 ﻿using MassTransit;
 using VideoStore.Bus.Messages;
-using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Models;
 
 namespace VideoStore.Ordering.Handlers
 {
     public class OrderMovieMessageHandler : IConsumer<OrderMovieMessage>
     {
-        private readonly IOrderingRepository _orderingRepository;
-        private readonly ILogger<OrderMovieMessageHandler> _logger;
         private readonly IIdempotentMessageHandler<OrderMovieMessage> _idempotentMessageHandler;
 
-        public OrderMovieMessageHandler(IOrderingRepository orderingRepository, ILogger<OrderMovieMessageHandler> logger, IIdempotentMessageHandler<OrderMovieMessage> idempotentMessageHandler)
+        public OrderMovieMessageHandler(IIdempotentMessageHandler<OrderMovieMessage> idempotentMessageHandler)
         {
-            _orderingRepository = orderingRepository;
-            _logger = logger;
             _idempotentMessageHandler = idempotentMessageHandler;
         }
 

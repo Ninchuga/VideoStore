@@ -17,21 +17,30 @@ namespace VideoStore.Ordering.Handlers
 
         public async Task Handle(ConsumeContext<T> messageContext, string consumerName, Action<OrderingContext> action)
         {
-            _logger.LogInformation("Message with correlation id {Correlationid} received in {Consumer}",
-                messageContext.CorrelationId, consumerName);
+            _logger.LogInformation("Processing message {@Message} with id {MessageId} and correlation id {Correlationid} received in {Consumer}",
+                messageContext.Message, messageContext.MessageId, messageContext.CorrelationId, consumerName);
 
             if (messageContext.MessageId is null)
                 throw new ArgumentNullException($"Message id must have a value in consumer {consumerName}");
 
-            if (await HasBeenProcessed(messageContext, consumerName))
-                return;
-
             try
             {
+                // in case message processing takes too long, new message will be sent from service bus as retry
+                // and when checked if its processed it will not be found in database,
+                // and when we call SaveChanges() exception can occur because previous message will be inserted in the meantime
+                // or we can end up with duplicated data
+                if (await HasBeenProcessed(messageContext, consumerName))
+                    return;
+
                 action(_dbContext);
 
                 await _dbContext.IdempotentConsumers.AddAsync(
-                    new Models.IdempotentConsumer { MessageId = messageContext.MessageId.Value, Consumer = consumerName });
+                    new Models.IdempotentConsumer 
+                    { 
+                        MessageId = messageContext.MessageId.Value,
+                        Consumer = consumerName,
+                        MessageProcessed = DateTime.UtcNow
+                    });
                 await _dbContext.SaveChangesAsync();
 
                 _logger.LogInformation("Message with id {MessageId} successfully consumed in consumer {Consumer}", messageContext.MessageId, consumerName);
@@ -45,8 +54,8 @@ namespace VideoStore.Ordering.Handlers
 
         private async Task<bool> HasBeenProcessed(ConsumeContext<T> message, string consumerName)
         {
-            bool hasBeenProcessed = (await _dbContext.IdempotentConsumers.ToListAsync()).Any(idempMsg =>
-                            idempMsg.MessageId.Equals(message.MessageId) && idempMsg.Consumer.Equals(consumerName, StringComparison.OrdinalIgnoreCase));
+            bool hasBeenProcessed = await _dbContext.IdempotentConsumers.AnyAsync(idempMsg =>
+                idempMsg.MessageId == message.MessageId && idempMsg.Consumer == consumerName);
 
             if(hasBeenProcessed)
                 _logger.LogWarning("Message with id {MessageId} already consumed by {Consumer}", message.MessageId, consumerName);
