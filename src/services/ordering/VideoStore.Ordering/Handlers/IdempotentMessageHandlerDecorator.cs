@@ -10,6 +10,7 @@ namespace VideoStore.Ordering.Handlers
         private readonly ILogger<IdempotentMessageHandlerDecorator<T>> _logger;
         private static readonly SemaphoreSlim _semaphore = new(initialCount: 0, maxCount: 1);
 
+
         public IdempotentMessageHandlerDecorator(OrderingContext context, ILogger<IdempotentMessageHandlerDecorator<T>> logger)
         {
             _dbContext = context;
