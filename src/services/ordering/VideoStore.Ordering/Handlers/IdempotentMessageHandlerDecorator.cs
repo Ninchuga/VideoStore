@@ -8,6 +8,7 @@ namespace VideoStore.Ordering.Handlers
     {
         private readonly OrderingContext _dbContext;
         private readonly ILogger<IdempotentMessageHandlerDecorator<T>> _logger;
+        private static readonly SemaphoreSlim _semaphore = new(initialCount: 0, maxCount: 1);
 
         public IdempotentMessageHandlerDecorator(OrderingContext context, ILogger<IdempotentMessageHandlerDecorator<T>> logger)
         {
@@ -25,6 +26,12 @@ namespace VideoStore.Ordering.Handlers
 
             try
             {
+                await _semaphore.WaitAsync();
+
+                // Use Redis to check if message is executing in distributing system by lock mechanism with key-value pair
+
+                _semaphore.Release();
+
                 // in case message processing takes too long, new message will be sent from service bus as retry
                 // and when checked if its processed it will not be found in database,
                 // and when we call SaveChanges() exception can occur because previous message will be inserted in the meantime
