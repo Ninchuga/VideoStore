@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using VideoStore.Movies.Infrastrucutre;
+using VideoStore.Ordering.Infrastrucutre.Repositories;
 
 namespace VideoStore.Ordering.Handlers
 {
@@ -8,55 +9,81 @@ namespace VideoStore.Ordering.Handlers
     {
         private readonly OrderingContext _dbContext;
         private readonly ILogger<IdempotentMessageHandlerDecorator<T>> _logger;
-        private static readonly SemaphoreSlim _semaphore = new(initialCount: 0, maxCount: 1);
+        private readonly IMessageHandlersRepository _distributedMessageRepo;
+        private static readonly SemaphoreSlim _semaphore = new(initialCount: 1, maxCount: 2);
 
-
-        public IdempotentMessageHandlerDecorator(OrderingContext context, ILogger<IdempotentMessageHandlerDecorator<T>> logger)
+        public IdempotentMessageHandlerDecorator(OrderingContext context,
+            ILogger<IdempotentMessageHandlerDecorator<T>> logger,
+            IMessageHandlersRepository distributedMessageHandlerRepo)
         {
             _dbContext = context;
             _logger = logger;
+            _distributedMessageRepo = distributedMessageHandlerRepo;
         }
 
-        public async Task Handle(ConsumeContext<T> messageContext, string consumerName, Action<OrderingContext> action)
+        public async Task Handle(ConsumeContext<T> messageContext, string consumerName, CancellationTokenSource cancellationTokenSource,
+            Func<OrderingContext, Task> function)
         {
             _logger.LogInformation("Processing message {@Message} with id {MessageId} and correlation id {Correlationid} received in {Consumer}",
                 messageContext.Message, messageContext.MessageId, messageContext.CorrelationId, consumerName);
 
+            if (string.IsNullOrWhiteSpace(consumerName))
+                throw new ArgumentNullException($"Argument {nameof(consumerName)} must have a value.");
+
             if (messageContext.MessageId is null)
                 throw new ArgumentNullException($"Message id must have a value in consumer {consumerName}");
+
+            if (cancellationTokenSource is null)
+                throw new ArgumentNullException("Cancellation token source cannot be null.");
+
+            string distributedMessageKey = $"{messageContext.MessageId}_{consumerName}";
 
             try
             {
                 await _semaphore.WaitAsync();
 
-                // Use Redis to check if message is executing in distributing system by lock mechanism with key-value pair
+                string processingMessage = await _distributedMessageRepo.GetProcessingMessage(distributedMessageKey);
+                if (processingMessage is not null)
+                    return;
 
-                _semaphore.Release();
+                await _distributedMessageRepo.InsertProcessingMessage(distributedMessageKey, DateTime.UtcNow);
 
-                // in case message processing takes too long, new message will be sent from service bus as retry
-                // and when checked if its processed it will not be found in database,
-                // and when we call SaveChanges() exception can occur because previous message will be inserted in the meantime
-                // or we can end up with duplicated data
                 if (await HasBeenProcessed(messageContext, consumerName))
                     return;
 
-                action(_dbContext);
+                if(cancellationTokenSource.IsCancellationRequested)
+                    cancellationTokenSource.Token.ThrowIfCancellationRequested();
+
+                await function(_dbContext);
 
                 await _dbContext.IdempotentConsumers.AddAsync(
-                    new Models.IdempotentConsumer 
-                    { 
-                        MessageId = messageContext.MessageId.Value,
-                        Consumer = consumerName,
-                        MessageProcessed = DateTime.UtcNow
-                    });
-                await _dbContext.SaveChangesAsync();
+                new Models.IdempotentConsumer
+                {
+                    MessageId = messageContext.MessageId.Value,
+                    Consumer = consumerName,
+                    MessageProcessed = DateTime.UtcNow
+                });
+
+                await _dbContext.SaveChangesAsync(cancellationTokenSource.Token);
 
                 _logger.LogInformation("Message with id {MessageId} successfully consumed in consumer {Consumer}", messageContext.MessageId, consumerName);
+            }
+            catch (OperationCanceledException ex)
+            {
+                var ct = ex.CancellationToken;
+                _logger.LogError("Operation was cancelled in consumer {Consumer} with message id {MessageId}", consumerName, messageContext.MessageId);
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError("Unexpected error occurred while executing message consumer with message: {ErrorMessage}", ex.Message);
                 throw;
+            }
+            finally
+            {
+                await _distributedMessageRepo.DeleteProcessingMessage(distributedMessageKey);
+                cancellationTokenSource.Dispose();
+                _semaphore.Release();
             }
         }
 
@@ -65,7 +92,7 @@ namespace VideoStore.Ordering.Handlers
             bool hasBeenProcessed = await _dbContext.IdempotentConsumers.AnyAsync(idempMsg =>
                 idempMsg.MessageId == message.MessageId && idempMsg.Consumer == consumerName);
 
-            if(hasBeenProcessed)
+            if (hasBeenProcessed)
                 _logger.LogWarning("Message with id {MessageId} already consumed by {Consumer}", message.MessageId, consumerName);
 
             return hasBeenProcessed;

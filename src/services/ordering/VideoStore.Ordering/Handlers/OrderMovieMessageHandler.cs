@@ -15,7 +15,9 @@ namespace VideoStore.Ordering.Handlers
 
         public async Task Consume(ConsumeContext<OrderMovieMessage> context)
         {
-            await _idempotentMessageHandler.Handle(context, consumerName: nameof(OrderMovieMessageHandler), (dbContext) =>
+            var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await _idempotentMessageHandler.Handle(context, consumerName: nameof(OrderMovieMessageHandler), cancellationTokenSource,
+                (dbContext) =>
             {
                 var message = context.Message;
 
@@ -27,7 +29,12 @@ namespace VideoStore.Ordering.Handlers
                     Movies = MapToMoviesFrom(message.Movies)
                 };
 
+                if(cancellationTokenSource.IsCancellationRequested)
+                    cancellationTokenSource.Token.ThrowIfCancellationRequested();
+
                 dbContext.Orders.Add(order);
+
+                return Task.CompletedTask;
             });
         }
 

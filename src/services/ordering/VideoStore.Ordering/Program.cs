@@ -12,6 +12,7 @@ using VideoStore.Movies.Infrastrucutre;
 using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Constants;
 using VideoStore.Ordering.Handlers;
+using VideoStore.Ordering.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Models;
 using VideoStore.Shared;
 
@@ -27,6 +28,7 @@ try
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
     ConfigureDbContext(builder, configuration);
+    AddRedisCaching(builder, configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     ConfigureSwagger(builder);
@@ -178,7 +180,7 @@ static void ConfigureServiceBus(WebApplicationBuilder builder, IConfiguration co
             // This configures message queue (not topic)
             cfg.ReceiveEndpoint(ServiceBusConstants.OrderMovieQueueName, endpoint =>
             {
-                endpoint.EnableDuplicateDetection(TimeSpan.FromMinutes(10)); // default is 10 minutes
+                //endpoint.EnableDuplicateDetection(TimeSpan.FromMinutes(10)); // default is 10 minutes
 
                 // after specified number of retry attempts in case of exception
                 // message will be sent to _error queue
@@ -199,4 +201,15 @@ static void ConfigureServiceBus(WebApplicationBuilder builder, IConfiguration co
             });
         });
     });
+}
+
+static void AddRedisCaching(WebApplicationBuilder builder, IConfiguration configuration)
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = configuration.GetConnectionString("RedisConnectionString");
+        options.InstanceName = "messagingstore";
+    });
+
+    builder.Services.AddTransient<IMessageHandlersRepository, MessageHandlersRepository>();
 }

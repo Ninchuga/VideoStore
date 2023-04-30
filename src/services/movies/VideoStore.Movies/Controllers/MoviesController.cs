@@ -114,7 +114,7 @@ namespace VideoStore.Movies.Controllers
             var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder);
             await _publishEndpoint.Publish(orderMovieMessage, context =>
             {
-                context.MessageId = Guid.NewGuid();
+                context.MessageId = Guid.NewGuid(); // new Guid("6ee234bb-c211-4756-bad1-c1c6e45c1b58"); //Guid.NewGuid();
                 context.CorrelationId = Guid.NewGuid();
                 context.TimeToLive = TimeSpan.FromMinutes(60); // if not consumed after this ttl, message will end up in dead-letter queue
             });

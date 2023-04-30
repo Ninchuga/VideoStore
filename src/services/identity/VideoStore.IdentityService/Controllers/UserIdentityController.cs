@@ -20,12 +20,6 @@ namespace VideoStore.IdentityService.Controllers
             _tokenService = tokenService;
         }
 
-        //public UserIdentityController(IUserRepository userRepository)
-        //{
-        //    _userRepository = userRepository;
-
-        //}
-
         [HttpGet]
         [Route("getUsers")]
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()

@@ -24,7 +24,7 @@ namespace VideoStore.IdentityService.Services
                 issuer: _jwtConfiguration.Value.Issuer,
                 audience: _jwtConfiguration.Value.Audience,
                 claims: user.BuildUserJwtClaims(),
-                expires: DateTime.UtcNow.AddMinutes(60),
+                expires: DateTime.UtcNow.AddHours(12), // only in dev environment
                 signingCredentials: signinCredentials);
             return new JwtSecurityTokenHandler().WriteToken(tokeOptions);
         }
