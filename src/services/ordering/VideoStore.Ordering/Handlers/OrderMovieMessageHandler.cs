@@ -17,25 +17,25 @@ namespace VideoStore.Ordering.Handlers
         {
             var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await _idempotentMessageHandler.Handle(context, consumerName: nameof(OrderMovieMessageHandler), cancellationTokenSource,
-                (dbContext) =>
-            {
-                var message = context.Message;
-
-                var order = new Order
+                function: (dbContext) =>
                 {
-                    UserEmail = message.UserEmail,
-                    UserName = message.UserName,
-                    Price = message.Movies.Sum(movie => movie.Price),
-                    Movies = MapToMoviesFrom(message.Movies)
-                };
+                    var message = context.Message;
 
-                if(cancellationTokenSource.IsCancellationRequested)
-                    cancellationTokenSource.Token.ThrowIfCancellationRequested();
+                    var order = new Order
+                    {
+                        UserEmail = message.UserEmail,
+                        UserName = message.UserName,
+                        Price = message.Movies.Sum(movie => movie.Price),
+                        Movies = MapToMoviesFrom(message.Movies)
+                    };
 
-                dbContext.Orders.Add(order);
+                    if (cancellationTokenSource.IsCancellationRequested)
+                        cancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-                return Task.CompletedTask;
-            });
+                    dbContext.Orders.Add(order);
+
+                    return Task.CompletedTask;
+                });
         }
 
         private static List<Models.Movie> MapToMoviesFrom(IEnumerable<Bus.Messages.Movie> movies)

@@ -16,7 +16,7 @@ namespace VideoStore.Movies.Infrastrucutre.Repositories
             _dbContext.Orders.Add(movie);
 
         public void UpdateOrder(Order movie) =>
-            _dbContext.Entry(movie).State = EntityState.Modified;
+            _dbContext.Update(movie);
 
         public void DeleteOrder(Order movie) =>
             _dbContext.Orders.Remove(movie);

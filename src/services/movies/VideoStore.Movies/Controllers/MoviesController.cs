@@ -28,65 +28,70 @@ namespace VideoStore.Movies.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MovieDTO>>> GetMovies()
+        [Route("getMovies")]
+        public async Task<ActionResult<IEnumerable<MovieDTO>>> GetMovies(CancellationToken cancellationToken)
         {
-            var movies = await _movieRepository.GetMovies();
+            var movies = await _movieRepository.GetMovies(cancellationToken);
             return movies.Any() ? Ok(movies.ToDtos()) : NotFound();
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<MovieDTO>> GetMovie(int id)
+        [HttpGet]
+        [Route("getMovie/{id}")]
+        public async Task<ActionResult<MovieDTO>> GetMovie([FromRoute] int id, CancellationToken cancellationToken)
         {
-            var movie = await _movieRepository.GetMovieBy(id);
+            var movie = await _movieRepository.GetMovieBy(id, cancellationToken);
             return movie is null ? NotFound() : Ok(movie.ToDto());
         }
 
         [HttpPost]
-        public async Task<ActionResult<Movie>> AddMovie(MovieDTO movie)
+        [Route("addMovie")]
+        public async Task<ActionResult<Movie>> AddMovie([FromBody] MovieDTO movie, CancellationToken cancellationToken)
         {
-            _movieRepository.AddMovie(movie.ToEntity());
-            await _movieRepository.SaveChanges();
+            _movieRepository.UpsertMovie(movie.ToEntity());
+            await _movieRepository.SaveChanges(cancellationToken);
 
             return Ok();
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutMovie(int id, MovieDTO movie)
+        [HttpPut]
+        [Route("updateMovie/{id}")]
+        public async Task<IActionResult> UpdateMovie([FromRoute] int id, [FromBody] MovieDTO movie, CancellationToken cancellationToken)
         {
             if (id == 0)
                 return BadRequest();
 
-            _movieRepository.UpdateMovie(movie.ToEntity(id));
+            _movieRepository.UpsertMovie(movie.ToEntity(id));
 
             try
             {
-                await _movieRepository.SaveChanges();
+                await _movieRepository.SaveChanges(cancellationToken);
             }
             catch (DbUpdateConcurrencyException)
             {
                 _logger.LogError("{ExceptionName} occurred for movie with id {MovieId}.", nameof(DbUpdateConcurrencyException), id);
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
             return Ok();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMovie(int id)
+        [HttpDelete]
+        [Route("deleteMovie/{id}")]
+        public async Task<IActionResult> DeleteMovie([FromRoute] int id, CancellationToken cancellationToken)
         {
-            var movie = await _movieRepository.GetMovieBy(id);
+            var movie = await _movieRepository.GetMovieBy(id, cancellationToken);
             if (movie is null)
                 return NotFound();
 
             _movieRepository.DeleteMovie(movie);
-            await _movieRepository.SaveChanges();
+            await _movieRepository.SaveChanges(cancellationToken);
 
             return Ok();
         }
 
         [HttpPost]
         [Route("orderMovies")]
-        public async Task<IActionResult> BuyMovie([FromBody] IEnumerable<int> moviesId)
+        public async Task<IActionResult> BuyMovie([FromBody] IEnumerable<int> moviesId, CancellationToken cancellationToken)
         {
             string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
             if(string.IsNullOrWhiteSpace(userEmail))
@@ -101,7 +106,7 @@ namespace VideoStore.Movies.Controllers
             var moviesToOrder = new List<Bus.Messages.Movie>();
             foreach (var movieId in moviesId)
             {
-                var movie = await _movieRepository.GetMovieBy(movieId);
+                var movie = await _movieRepository.GetMovieBy(movieId, cancellationToken);
                 if (movie is null)
                     return NotFound($"Movie with id: {movieId} was not found.");
 
@@ -114,10 +119,10 @@ namespace VideoStore.Movies.Controllers
             var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder);
             await _publishEndpoint.Publish(orderMovieMessage, context =>
             {
-                context.MessageId = Guid.NewGuid(); // new Guid("6ee234bb-c211-4756-bad1-c1c6e45c1b58"); //Guid.NewGuid();
+                context.MessageId = Guid.NewGuid(); // new Guid("6ee234bb-c211-4756-bad1-c1c6e45c1b58");
                 context.CorrelationId = Guid.NewGuid();
                 context.TimeToLive = TimeSpan.FromMinutes(60); // if not consumed after this ttl, message will end up in dead-letter queue
-            });
+            }, cancellationToken: cancellationToken);
 
             return Ok();
         }

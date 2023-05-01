@@ -10,7 +10,7 @@ namespace VideoStore.Ordering.Handlers
         private readonly OrderingContext _dbContext;
         private readonly ILogger<IdempotentMessageHandlerDecorator<T>> _logger;
         private readonly IMessageHandlersRepository _distributedMessageRepo;
-        private static readonly SemaphoreSlim _semaphore = new(initialCount: 1, maxCount: 2);
+        private static readonly SemaphoreSlim _semaphore = new(initialCount: 1, maxCount: 1);
 
         public IdempotentMessageHandlerDecorator(OrderingContext context,
             ILogger<IdempotentMessageHandlerDecorator<T>> logger,
@@ -51,33 +51,29 @@ namespace VideoStore.Ordering.Handlers
                 if (await HasBeenProcessed(messageContext, consumerName))
                     return;
 
-                if(cancellationTokenSource.IsCancellationRequested)
-                    cancellationTokenSource.Token.ThrowIfCancellationRequested();
-
                 await function(_dbContext);
 
-                await _dbContext.IdempotentConsumers.AddAsync(
-                new Models.IdempotentConsumer
-                {
-                    MessageId = messageContext.MessageId.Value,
-                    Consumer = consumerName,
-                    MessageProcessed = DateTime.UtcNow
-                });
+                _dbContext.IdempotentConsumers.Add(
+                    new Models.IdempotentConsumer
+                    {
+                        MessageId = messageContext.MessageId.Value,
+                        Consumer = consumerName,
+                        MessageProcessed = DateTime.UtcNow
+                    });
 
                 await _dbContext.SaveChangesAsync(cancellationTokenSource.Token);
 
                 _logger.LogInformation("Message with id {MessageId} successfully consumed in consumer {Consumer}", messageContext.MessageId, consumerName);
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
-                var ct = ex.CancellationToken;
                 _logger.LogError("Operation was cancelled in consumer {Consumer} with message id {MessageId}", consumerName, messageContext.MessageId);
-                throw;
+                throw; // throw so the service bus can retry
             }
             catch (Exception ex)
             {
                 _logger.LogError("Unexpected error occurred while executing message consumer with message: {ErrorMessage}", ex.Message);
-                throw;
+                throw; // throw so the service bus can retry
             }
             finally
             {

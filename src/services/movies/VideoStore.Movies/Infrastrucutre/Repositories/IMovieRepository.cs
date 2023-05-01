@@ -4,12 +4,10 @@ namespace VideoStore.Movies.Infrastrucutre.Repositories
 {
     public interface IMovieRepository
     {
-        Task<IReadOnlyList<Movie>> GetMovies();
-        Task<Movie> GetMovieBy(int id);
+        Task<IReadOnlyList<Movie>> GetMovies(CancellationToken cancellationToken);
+        Task<Movie> GetMovieBy(int id, CancellationToken cancellationToken);
         void DeleteMovie(Movie movie);
-        void AddMovie(Movie movie);
-        void UpdateMovie(Movie movie);
-
-        Task SaveChanges();
+        void UpsertMovie(Movie movie);
+        Task SaveChanges(CancellationToken cancellationToken);
     }
 }

@@ -52,6 +52,8 @@ try
         });
     }
 
+    app.UseMiddleware<ExceptionHandlerMiddleware>();
+
     app.UseAuthentication();
     app.UseAuthorization();
 
