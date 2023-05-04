@@ -15,7 +15,7 @@ namespace VideoStore.Ordering.Handlers
 
         public async Task Consume(ConsumeContext<OrderMovieMessage> context)
         {
-            var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             await _idempotentMessageHandler.Handle(context, consumerName: nameof(OrderMovieMessageHandler), cancellationTokenSource,
                 function: (dbContext) =>
                 {

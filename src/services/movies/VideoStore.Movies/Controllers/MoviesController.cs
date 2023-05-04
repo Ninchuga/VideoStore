@@ -95,11 +95,11 @@ namespace VideoStore.Movies.Controllers
         {
             string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
             if(string.IsNullOrWhiteSpace(userEmail))
-                return BadRequest($"User email must have a value.");
+                return BadRequest("User email must have a value.");
 
             string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Subject, StringComparison.OrdinalIgnoreCase))?.Value;
             if(string.IsNullOrWhiteSpace(userName))
-                return BadRequest($"User name must have a value.");
+                return BadRequest("User name must have a value.");
 
             string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.UserId, StringComparison.OrdinalIgnoreCase))?.Value;
 
