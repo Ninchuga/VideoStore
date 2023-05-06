@@ -1,14 +1,11 @@
-using Microsoft.EntityFrameworkCore;
 using Serilog;
-using System.Reflection;
-using VideoStore.IdentityService.Infrastrucutre;
+using VideoStore.IdentityService.Constants;
 using VideoStore.IdentityService.Infrastrucutre.Repositories;
 using VideoStore.IdentityService.Model;
 using VideoStore.IdentityService.Services;
+using VideoStore.Movies.Extensions;
 using VideoStore.Shared;
 
-const string JwtConfigurationName = "JWT";
-const string IdentityConnectionStringKey = "IdentityConnectionString";
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders(); // remove default logging providers
 try
@@ -18,12 +15,12 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    ConfigureDbContext(builder, configuration);
+    builder.Services.ConfigureDbContext(builder.Host, configuration);
     builder.Services.AddTransient<IUserRepository, UserRepository>();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(JwtConfigurationName));
+    builder.Services.ConfigureSwagger();
+    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(IdentityConstants.JwtConfigurationName));
     builder.Services.AddScoped<TokenService>();
 
     Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
@@ -74,24 +71,4 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
     //}
 
     return builder.Build();
-}
-
-void ConfigureDbContext(WebApplicationBuilder builder, IConfiguration configuration)
-{
-    builder.Services.AddDbContext<IdentityContext>(options =>
-                    options.UseSqlServer(configuration.GetConnectionString(IdentityConnectionStringKey), option =>
-                    {
-                        option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
-                        // EF connection resiliency
-                        option.EnableRetryOnFailure(
-                            maxRetryCount: 10,
-                            maxRetryDelay: TimeSpan.FromSeconds(10),
-                            errorNumbersToAdd: null);
-                    }));
-
-    builder.Host.MigrateDatabase<IdentityContext>(builder.Services, (context, services) =>
-    {
-        var logger = services.GetService<ILogger<IdentityContextSeed>>();
-        IdentityContextSeed.SeedAsync(context, logger).Wait();
-    });
 }

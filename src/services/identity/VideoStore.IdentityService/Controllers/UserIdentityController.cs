@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VideoStore.IdentityService.DTOs;
 using VideoStore.IdentityService.Extensions;
 using VideoStore.IdentityService.Infrastrucutre.Repositories;
@@ -8,6 +9,7 @@ using VideoStore.IdentityService.Services;
 
 namespace VideoStore.IdentityService.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class UserIdentityController : Controller
     {
@@ -59,6 +61,7 @@ namespace VideoStore.IdentityService.Controllers
 
         [HttpPost]
         [Route("login")]
+        [AllowAnonymous]
         public async Task<ActionResult<UserLoginResponse>> Login([FromBody] UserLoginRequest user)
         {
             if (user is null || string.IsNullOrWhiteSpace(user.UserName) || string.IsNullOrWhiteSpace(user.Password))

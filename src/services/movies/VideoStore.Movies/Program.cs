@@ -1,18 +1,10 @@
-using VideoStore.Movies.Infrastrucutre;
-using VideoStore.Movies;
 using VideoStore.Shared;
 using Serilog;
-using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using VideoStore.Movies.Infrastrucutre.Repositories;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using VideoStore.Movies.Models;
-using Microsoft.OpenApi.Models;
-using MassTransit;
 using System.IdentityModel.Tokens.Jwt;
 using VideoStore.Movies.Constants;
+using VideoStore.Movies.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders(); // remove default logging providers
@@ -24,14 +16,14 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    ConfigureDbContext(builder, configuration);
+    builder.Services.ConfigureDbContext(builder.Host, configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    ConfigureSwagger(builder);
+    builder.Services.ConfigureSwagger();
     builder.Services.AddTransient<IMovieRepository, MovieRepository>();
-    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(MoviesConstants.JwtConfigurationName));
-    ConfigureAuthentication(builder);
-    ConfigureServiceBus(builder, configuration);
+    builder.Services.Configure<JwtConfig>(configuration.GetSection(MoviesConstants.JwtConfigurationName));
+    builder.Services.ConfigureAuthentication(configuration);
+    builder.Services.ConfigureServiceBus(configuration);
 
     Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
@@ -85,94 +77,4 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
     //}
 
     return builder.Build();
-}
-
-void ConfigureDbContext(WebApplicationBuilder builder, IConfiguration configuration)
-{
-    builder.Services.AddDbContext<MovieContext>(options =>
-                    options.UseSqlServer(configuration.GetConnectionString(MoviesConstants.MoviesConnectionStringKey), option =>
-                    {
-                        option.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                        // EF connection resiliency
-                        option.EnableRetryOnFailure(
-                            maxRetryCount: 10,
-                            maxRetryDelay: TimeSpan.FromSeconds(10),
-                            errorNumbersToAdd: null);
-                    }));
-
-    builder.Host.MigrateDatabase<MovieContext>(builder.Services, (context, services) =>
-    {
-        var logger = services.GetService<ILogger<MovieContextSeed>>();
-        MovieContextSeed.SeedAsync(context, logger).Wait();
-    });
-}
-
-void ConfigureAuthentication(WebApplicationBuilder builder)
-{
-    var jwtConfig = builder.Configuration.GetSection(MoviesConstants.JwtConfigurationName).Get<JwtConfig>();
-
-    builder.Services.AddAuthentication(opt => 
-        {
-            opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = false;
-            options.SaveToken = true; // stores the bearer token in HTTP Context, so we can use the token later in the controller
-            options.TokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateIssuerSigningKey = true,
-                ValidAudience = jwtConfig?.Audience,
-                ValidIssuer = jwtConfig?.Issuer,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig?.Secret))
-            };
-        });
-}
-
-void ConfigureSwagger(WebApplicationBuilder builder)
-{
-    builder.Services.AddSwaggerGen(options =>
-    {
-        options.SwaggerDoc("V1", new OpenApiInfo
-        {
-            Version = "V1",
-            Title = "Movie API",
-            Description = "Movies WebAPI"
-        });
-        options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
-        {
-            Scheme = JwtBearerDefaults.AuthenticationScheme,
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header,
-            Name = "Authorization",
-            Description = "Bearer Authentication with JWT Token",
-            Type = SecuritySchemeType.Http
-        });
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme {
-                    Reference = new OpenApiReference {
-                        Id = JwtBearerDefaults.AuthenticationScheme,
-                            Type = ReferenceType.SecurityScheme
-                    }
-                },
-                new List <string>()
-            }
-        });
-    });
-}
-
-void ConfigureServiceBus(WebApplicationBuilder builder, IConfiguration configuration)
-{
-    builder.Services.AddMassTransit(config =>
-    {
-        config.UsingAzureServiceBus((context, cfg) =>
-        {
-            cfg.Host(configuration.GetConnectionString(MoviesConstants.AzureServiceBusConnectionStringKey));
-        });
-    });
 }
