@@ -1,17 +1,11 @@
 ﻿namespace VideoStore.Bus.Messages
 {
-    public record BaseMessage
+    public abstract record BaseMessage
     {
         public BaseMessage()
         {
             Id = Guid.NewGuid();
             MessageCreationDateTime = DateTime.UtcNow;
-        }
-
-        public BaseMessage(Guid id, DateTime creationDate)
-        {
-            Id = id;
-            MessageCreationDateTime = creationDate;
         }
 
         public Guid Id { get; init; }

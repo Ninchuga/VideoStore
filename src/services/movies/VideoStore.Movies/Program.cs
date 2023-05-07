@@ -16,6 +16,8 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
+    builder.Configuration.ConfigureAzureKeyVault();
+    builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
@@ -64,17 +66,6 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
         .AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
         .AddEnvironmentVariables();
-
-    //var config = builder.Build();
-
-    //if (config.GetValue<bool>("UseVault", false))
-    //{
-    //    TokenCredential credential = new ClientSecretCredential(
-    //        config["Vault:TenantId"],
-    //        config["Vault:ClientId"],
-    //        config["Vault:ClientSecret"]);
-    //    builder.AddAzureKeyVault(new Uri($"https://{config["Vault:Name"]}.vault.azure.net/"), credential);
-    //}
 
     return builder.Build();
 }

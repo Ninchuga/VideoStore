@@ -1,9 +1,15 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Azure.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using System.Text;
 using VideoStore.IdentityService.Constants;
 using VideoStore.IdentityService.Infrastrucutre;
+using VideoStore.IdentityService.Model;
+using VideoStore.IdentityService.Models;
 using VideoStore.Shared;
 
 namespace VideoStore.Movies.Extensions
@@ -61,6 +67,54 @@ namespace VideoStore.Movies.Extensions
                         new List <string>()
                     }
                 });
+            });
+        }
+
+        public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration)
+        {
+            var jwtConfig = configuration.GetSection(IdentityConstants.JwtConfigurationName).Get<JwtConfig>()
+                ?? throw new ArgumentNullException($"{nameof(JwtConfig)} must have a value.");
+
+            string jwtSecret = configuration[IdentityConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+
+            services.AddAuthentication(opt =>
+            {
+                opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true; // stores the bearer token in HTTP Context, so we can use the token later in the controller
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidAudience = jwtConfig.Audience,
+                        ValidIssuer = jwtConfig.Issuer,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                    };
+                });
+        }
+
+        public static void ConfigureAzureClients(this IServiceCollection services, IConfiguration configuration)
+        {
+            var keyVaultConfig = configuration.GetSection(IdentityConstants.KeyVaultSectionName).Get<KeyVaultConfig>()
+                ?? throw new NullReferenceException($"{nameof(KeyVaultConfig)} must have a value.");
+
+            // You can also reduce the number of calls to Azure Key Vault by caching your SecretClient
+            // or any other Key Vault SDK client.
+            // clients are designed to reuse an HttpClient by default and cache authentication bearer tokens for service like Key Vault
+            // to reduce the number of calls to authenticate.
+            services.AddAzureClients(config =>
+            {
+                // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
+                // allowing you to move your app seamlessly from development to production with no code changes.
+                config.UseCredential(new DefaultAzureCredential());
+
+                // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
+                config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));
             });
         }
     }

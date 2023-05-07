@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Azure.Security.KeyVault.Secrets;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using VideoStore.IdentityService.Constants;
 using VideoStore.IdentityService.Extensions;
 using VideoStore.IdentityService.Model;
 
@@ -10,15 +12,20 @@ namespace VideoStore.IdentityService.Services
     public class TokenService
     {
         private readonly IOptionsSnapshot<JwtConfig> _jwtConfiguration;
+        private readonly SecretClient _secretClient;
 
-        public TokenService(IOptionsSnapshot<JwtConfig> jwtConfiguration)
+        public TokenService(IOptionsSnapshot<JwtConfig> jwtConfiguration, SecretClient secretClient)
         {
             _jwtConfiguration = jwtConfiguration;
+            _secretClient = secretClient;
         }
 
-        public string GenerateTokenFor(User user)
+        public async Task<string> GenerateTokenFor(User user)
         {
-            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfiguration.Value.Secret));
+            var jwtKeyVaultSecretResponse = await _secretClient.GetSecretAsync(IdentityConstants.JwtSecretKeyName);
+            var jwtKeyValueSecret = jwtKeyVaultSecretResponse.Value;
+            
+            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKeyValueSecret.Value));
             var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
             var tokeOptions = new JwtSecurityToken(
                 issuer: _jwtConfiguration.Value.Issuer,

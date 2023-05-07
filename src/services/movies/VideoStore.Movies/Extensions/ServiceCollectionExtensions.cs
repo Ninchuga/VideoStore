@@ -1,6 +1,9 @@
-﻿using MassTransit;
+﻿using Azure.Identity;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -17,7 +20,7 @@ namespace VideoStore.Movies.Extensions
         public static void ConfigureDbContext(this IServiceCollection services, ConfigureHostBuilder host, IConfiguration configuration)
         {
             services.AddDbContext<MovieContext>(options =>
-                            options.UseSqlServer(configuration.GetConnectionString(MoviesConstants.MoviesConnectionStringKey), option =>
+                            options.UseSqlServer(configuration[MoviesConstants.MoviesConnectionStringKey], option =>
                             {
                                 option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
                                 // EF connection resiliency
@@ -70,11 +73,10 @@ namespace VideoStore.Movies.Extensions
 
         public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
-            var jwtConfig = configuration.GetSection(MoviesConstants.JwtConfigurationName).Get<JwtConfig>();
-            if (jwtConfig is null)
-                throw new ArgumentNullException($"{nameof(JwtConfig)} must have a value.");
-            if (string.IsNullOrWhiteSpace(jwtConfig.Secret))
-                throw new ArgumentNullException($"{nameof(JwtConfig)} {nameof(JwtConfig.Secret)} must have a value.");
+            var jwtConfig = configuration.GetSection(MoviesConstants.JwtConfigurationName).Get<JwtConfig>()
+                ?? throw new ArgumentNullException($"{nameof(JwtConfig)} must have a value.");
+
+            string jwtSecret = configuration[MoviesConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
 
             services.AddAuthentication(opt =>
             {
@@ -92,7 +94,7 @@ namespace VideoStore.Movies.Extensions
                         ValidateIssuerSigningKey = true,
                         ValidAudience = jwtConfig.Audience,
                         ValidIssuer = jwtConfig.Issuer,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Secret))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                     };
                 });
         }
@@ -103,8 +105,28 @@ namespace VideoStore.Movies.Extensions
             {
                 config.UsingAzureServiceBus((context, cfg) =>
                 {
-                    cfg.Host(configuration.GetConnectionString(MoviesConstants.AzureServiceBusConnectionStringKey));
+                    cfg.Host(configuration[MoviesConstants.AzureServiceBusConnectionStringKey]);
                 });
+            });
+        }
+
+        public static void ConfigureAzureClients(this IServiceCollection services, IConfiguration configuration)
+        {
+            var keyVaultConfig = configuration.GetSection(MoviesConstants.KeyVaultSectionName).Get<KeyVaultConfig>()
+                ?? throw new NullReferenceException($"{nameof(KeyVaultConfig)} must have a value.");
+
+            // You can also reduce the number of calls to Azure Key Vault by caching your SecretClient
+            // or any other Key Vault SDK client.
+            // clients are designed to reuse an HttpClient by default and cache authentication bearer tokens for service like Key Vault
+            // to reduce the number of calls to authenticate.
+            services.AddAzureClients(config =>
+            {
+               // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
+               // allowing you to move your app seamlessly from development to production with no code changes.
+               config.UseCredential(new DefaultAzureCredential());
+
+                // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
+                config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));
             });
         }
     }

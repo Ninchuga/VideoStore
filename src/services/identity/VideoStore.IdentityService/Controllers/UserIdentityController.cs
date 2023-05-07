@@ -71,7 +71,7 @@ namespace VideoStore.IdentityService.Controllers
             if (existingUser is null)
                 return Unauthorized("Invalid credentials.");
 
-            return Ok(new UserLoginResponse(_tokenService.GenerateTokenFor(existingUser)));
+            return Ok(new UserLoginResponse(await _tokenService.GenerateTokenFor(existingUser)));
         }
     }
 }

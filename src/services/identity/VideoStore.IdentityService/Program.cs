@@ -1,5 +1,6 @@
 using Serilog;
 using VideoStore.IdentityService.Constants;
+using VideoStore.IdentityService.Extensions;
 using VideoStore.IdentityService.Infrastrucutre.Repositories;
 using VideoStore.IdentityService.Model;
 using VideoStore.IdentityService.Services;
@@ -15,6 +16,8 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
+    builder.Configuration.ConfigureAzureKeyVault();
+    builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
     builder.Services.AddTransient<IUserRepository, UserRepository>();
     builder.Services.AddControllers();
@@ -62,17 +65,6 @@ IConfiguration GetConfiguration(IWebHostEnvironment environment)
         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
         .AddJsonFile($"appsettings.{environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
         .AddEnvironmentVariables();
-
-    //var config = builder.Build();
-
-    //if (config.GetValue<bool>("UseVault", false))
-    //{
-    //    TokenCredential credential = new ClientSecretCredential(
-    //        config["Vault:TenantId"],
-    //        config["Vault:ClientId"],
-    //        config["Vault:ClientSecret"]);
-    //    builder.AddAzureKeyVault(new Uri($"https://{config["Vault:Name"]}.vault.azure.net/"), credential);
-    //}
 
     return builder.Build();
 }

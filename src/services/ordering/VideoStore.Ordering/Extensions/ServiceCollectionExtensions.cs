@@ -145,7 +145,7 @@ namespace VideoStore.Ordering.Extensions
             services.AddTransient<IMessageHandlersRepository, MessageHandlersRepository>();
         }
 
-        public static void AddAzureClients(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureAzureClients(this IServiceCollection services, IConfiguration configuration)
         {
             // You can also reduce the number of calls to Azure Key Vault by caching your SecretClient
             // or any other Key Vault SDK client.
@@ -159,7 +159,5 @@ namespace VideoStore.Ordering.Extensions
                 config.AddSecretClient(new Uri(configuration["KeyVaultConfiguration:KeyVaultURL"]));
             });
         }
-
-
     }
 }
