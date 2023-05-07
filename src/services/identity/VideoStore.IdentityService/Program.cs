@@ -15,7 +15,7 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    builder.Services.ConfigureDbContext(builder.Host, configuration);
+    builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
     builder.Services.AddTransient<IUserRepository, UserRepository>();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
@@ -31,11 +31,15 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/V1/swagger.json", "Identity Service WebAPI");
+        });
     }
 
     app.UseMiddleware<ExceptionHandlerMiddleware>();
 
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();

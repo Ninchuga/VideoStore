@@ -16,14 +16,14 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    builder.Services.ConfigureDbContext(builder.Host, configuration);
+    builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();
     builder.Services.AddTransient<IMovieRepository, MovieRepository>();
-    builder.Services.Configure<JwtConfig>(configuration.GetSection(MoviesConstants.JwtConfigurationName));
-    builder.Services.ConfigureAuthentication(configuration);
-    builder.Services.ConfigureServiceBus(configuration);
+    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(MoviesConstants.JwtConfigurationName));
+    builder.Services.ConfigureAuthentication(builder.Configuration);
+    builder.Services.ConfigureServiceBus(builder.Configuration);
 
     Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 

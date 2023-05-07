@@ -18,16 +18,18 @@ try
 
     Log.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    builder.Services.ConfigureDbContext(configuration);
-    builder.Services.AddRedisCaching(configuration);
+    builder.Configuration.ConfigureAzureKeyVault();
+    builder.Services.AddAzureClients(builder.Configuration);
+    builder.Services.ConfigureDbContext(builder.Configuration);
+    builder.Services.AddRedisCaching(builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();
     builder.Services.AddTransient<IOrderingRepository, OrderingRepository>();
     builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(OrderingConstants.JwtConfigurationName));
     builder.Services.AddTransient(typeof(IIdempotentMessageHandler<>), typeof(IdempotentMessageHandlerDecorator<>));
-    builder.Services.ConfigureAuthentication(configuration);
-    builder.Services.ConfigureServiceBus(configuration);
+    builder.Services.ConfigureAuthentication(builder.Configuration);
+    builder.Services.ConfigureServiceBus(builder.Configuration);
 
     Log.Information("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 

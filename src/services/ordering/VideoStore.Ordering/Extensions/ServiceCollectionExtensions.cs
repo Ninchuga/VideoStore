@@ -1,6 +1,8 @@
-﻿using MassTransit;
+﻿using Azure.Identity;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Azure;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -101,7 +103,7 @@ namespace VideoStore.Ordering.Extensions
 
                 config.UsingAzureServiceBus((context, cfg) =>
                 {
-                    cfg.Host(configuration.GetConnectionString(OrderingConstants.AzureServiceBusConnectionStringKey));
+                    cfg.Host(configuration[OrderingConstants.AzureServiceBusConnectionStringKey]);
 
                     // We can configure duplication and message retries on a global level for all queues and topics
                     //cfg.UseMessageRetry(r => r.Interval(retryCount: 3, TimeSpan.FromSeconds(5)));
@@ -137,11 +139,28 @@ namespace VideoStore.Ordering.Extensions
         {
             services.AddStackExchangeRedisCache(options =>
             {
-                options.Configuration = configuration.GetConnectionString(OrderingConstants.RedisConnectionStringKey);
+                options.Configuration = configuration[OrderingConstants.RedisConnectionStringKey];
                 options.InstanceName = OrderingConstants.RedisMessagingStoreInstanceName;
             });
 
             services.AddTransient<IMessageHandlersRepository, MessageHandlersRepository>();
         }
+
+        public static void AddAzureClients(this IServiceCollection services, IConfiguration configuration)
+        {
+            // You can also reduce the number of calls to Azure Key Vault by caching your SecretClient
+            // or any other Key Vault SDK client.
+            // clients are designed to reuse an HttpClient by default and cache authentication bearer tokens for service like Key Vault
+            // to reduce the number of calls to authenticate.
+            services.AddAzureClients(config =>
+            {
+                config.UseCredential(new DefaultAzureCredential());
+
+                // Assumes the deployed Key Vault URL is stored in a variable named KEYVAULT_URL.
+                config.AddSecretClient(new Uri(configuration["KeyVaultConfiguration:KeyVaultURL"]));
+            });
+        }
+
+        
     }
 }
