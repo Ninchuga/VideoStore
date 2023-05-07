@@ -25,7 +25,7 @@ steps:
   displayName: 'Use .NET 6 sdk'
   inputs:
     packageType: 'sdk'
-    version: $(dotNetVersion)
+    version: '6.0.x'
     includePreviewVersions: true
 
 - task: DotNetCoreCLI@2
