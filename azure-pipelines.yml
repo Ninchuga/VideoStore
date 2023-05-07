@@ -1,5 +1,22 @@
 # ASP.NET
 # Build and test ASP.NET projects.
 # Add steps that publish symbols, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'restore'
+    projects: '**/VideoStore.IdentityService.csproj'
+    feedsToUse: 'select'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/VideoStore.IdentityService.csproj'
+
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'My Basic Azure subscription (0577af01-3c9c-4fa7-aea3-96aef0090074)'
+    appType: 'webApp'
+    WebAppName: 'videostoreidentityservice'
+    packageForLinux: '$(System.DefaultWorkingDirectory)/**/VideoStore.IdentityService.zip'
