@@ -15,20 +15,26 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
+- task: UseDotNet@2
+  displayName: Set dotnet core version
   inputs:
-    restoreSolution: '$(solution)'
-
-- task: VSBuild@1
+    version: '6.0.x'
+    
+- task: DotNetCoreCLI@2
+  displayName: Build
   inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: build
+    projects: '**/VideoStore.IdentityService.csproj'
+    arguments: '--configuration $(buildConfiguration)'
 
-- task: VSTest@2
+- task: DotNetCoreCLI@2
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'publish'
+    publishWebProjects: true
+    arguments: 
+
+- script: dotnet publish -c Release -o build p:PackageAsSingleFile=true
+  displayName: Publish
+ 
+- script: tar -a -c -C build -f Application.zip *.*
+  displayName: Zip
