@@ -19,7 +19,7 @@ namespace VideoStore.Movies.Extensions
         public static void ConfigureDbContext(this IServiceCollection services, ConfigureHostBuilder host, IConfiguration configuration)
         {
             services.AddDbContext<IdentityContext>(options =>
-                            options.UseSqlServer(configuration.GetConnectionString(IdentityConstants.IdentityConnectionStringKey), option =>
+                            options.UseSqlServer(configuration[IdentityConstants.IdentityConnectionStringKey], option =>
                             {
                                 option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
                                 // EF connection resiliency
