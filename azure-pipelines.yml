@@ -27,12 +27,6 @@ steps:
     projects: '**/VideoStore.IdentityService.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'publish'
-    publishWebProjects: true
-    arguments: 
-
 - script: dotnet publish -c Release -o build p:PackageAsSingleFile=true
   displayName: Publish
  
