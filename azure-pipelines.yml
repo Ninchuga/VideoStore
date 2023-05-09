@@ -23,6 +23,7 @@ steps:
     includePreviewVersions: true
     
 - task: DotNetCoreCLI@2
+  displayName: Runt tests
   inputs:
    command: test
    projects: '**/Tests/*.csproj'
@@ -42,7 +43,7 @@ steps:
   inputs:
     command: publish
     publishWebProjects: false
-    projects: '**/src/services/*/*/*.csproj'
+    projects: 'src/services/*/*/*.csproj'
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: true
 
