@@ -48,12 +48,12 @@ steps:
     zipAfterPublish: true
 
 # Package the file and uploads them as an artifact of the build
-- task: PublishBuildArtifacts@1
-  displayName: 'publish artifacts'
+# - task: PublishBuildArtifacts@1
+#   displayName: 'publish artifacts'
   
 # # Package the file and uploads them as an artifact of the build
-# - task: PublishPipelineArtifact@1
-#   inputs:
-#    targetPath: '$(Build.ArtifactStagingDirectory)'
-#    #artifact: 'videostore'
-#    publishLocation: 'pipeline'
+- task: PublishPipelineArtifact@1
+  inputs:
+   targetPath: '$(Build.ArtifactStagingDirectory)'
+   artifact: 'VideoStoreArtifact'
+   publishLocation: 'pipeline'
