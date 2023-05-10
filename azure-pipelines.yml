@@ -47,11 +47,11 @@ steps:
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: true
 
-# Package the file and uploads them as an artifact of the build
+# Package the file and uploads them as an artifact of the build -> old way
 # - task: PublishBuildArtifacts@1
 #   displayName: 'publish artifacts'
   
-# # Package the file and uploads them as an artifact of the build
+# # Package the file and uploads them as an artifact of the build -> new way
 - task: PublishPipelineArtifact@1
   inputs:
    targetPath: '$(Build.ArtifactStagingDirectory)'
