@@ -19,6 +19,7 @@ try
     builder.Configuration.ConfigureAzureKeyVault();
     builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
+    builder.Services.ConfigureAuthentication(builder.Configuration);
     builder.Services.AddTransient<IUserRepository, UserRepository>();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();

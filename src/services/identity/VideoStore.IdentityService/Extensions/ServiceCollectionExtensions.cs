@@ -112,19 +112,19 @@ namespace VideoStore.Movies.Extensions
             services.AddAzureClients(config =>
             {
                 // Register azure key vault service client and initialize it using the KeyVault section of configuration
-                config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl))
-                    // Set the name for this client registration
-                    //.WithName("NamedBlobClient")
-                    // Set the credential for this client registration
-                    .WithCredential(new ClientSecretCredential(keyVaultConfig.TenantId, keyVaultConfig.ClientId, keyVaultConfig.ClientSecret))
-                    // Configure the client options
-                    .ConfigureOptions(options => options.Retry.MaxRetries = 10);
+                //config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl))
+                //    // Set the name for this client registration
+                //    //.WithName("NamedBlobClient")
+                //    // Set the credential for this client registration
+                //    .WithCredential(new ClientSecretCredential(keyVaultConfig.TenantId, keyVaultConfig.ClientId, keyVaultConfig.ClientSecret))
+                //    // Configure the client options
+                //    .ConfigureOptions(options => options.Retry.MaxRetries = 10);
 
                 //config.UseCredential(new EnvironmentCredential());
 
                 // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
                 // allowing you to move your app seamlessly from development to production with no code changes.
-                //config.UseCredential(new DefaultAzureCredential()); // failing in Azure App Service
+                config.UseCredential(new DefaultAzureCredential()); // failing in Azure App Service
                 //var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
                 //{
                 //    ExcludeEnvironmentCredential = true,
