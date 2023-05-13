@@ -111,7 +111,17 @@ namespace VideoStore.Movies.Extensions
             {
                 // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
                 // allowing you to move your app seamlessly from development to production with no code changes.
-                config.UseCredential(new DefaultAzureCredential());
+                //config.UseCredential(new DefaultAzureCredential()); // failing in Azure App Service
+                var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+                {
+                    ExcludeEnvironmentCredential = true,
+                    ExcludeManagedIdentityCredential = true,
+                    ExcludeVisualStudioCredential = true,
+                    ExcludeAzureCliCredential = true,
+                    ExcludeAzurePowerShellCredential = true,
+                    ExcludeSharedTokenCacheCredential = true
+                });
+                config.UseCredential(credential);
 
                 // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
                 config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));
