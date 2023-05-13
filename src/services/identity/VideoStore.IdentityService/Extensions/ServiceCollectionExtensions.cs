@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -119,7 +120,9 @@ namespace VideoStore.Movies.Extensions
                     ExcludeVisualStudioCredential = true,
                     ExcludeAzureCliCredential = true,
                     ExcludeAzurePowerShellCredential = true,
-                    ExcludeSharedTokenCacheCredential = true
+                    ExcludeSharedTokenCacheCredential = true,
+                    ExcludeVisualStudioCodeCredential = true,
+                    ExcludeInteractiveBrowserCredential = true
                 });
                 config.UseCredential(credential);
 
