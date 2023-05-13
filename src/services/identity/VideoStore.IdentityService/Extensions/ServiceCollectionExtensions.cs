@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -111,32 +109,12 @@ namespace VideoStore.Movies.Extensions
             // to reduce the number of calls to authenticate.
             services.AddAzureClients(config =>
             {
-                // Register azure key vault service client and initialize it using the KeyVault section of configuration
-                //config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl))
-                //    // Set the name for this client registration
-                //    //.WithName("NamedBlobClient")
-                //    // Set the credential for this client registration
-                //    .WithCredential(new ClientSecretCredential(keyVaultConfig.TenantId, keyVaultConfig.ClientId, keyVaultConfig.ClientSecret))
-                //    // Configure the client options
-                //    .ConfigureOptions(options => options.Retry.MaxRetries = 10);
-
-                //config.UseCredential(new EnvironmentCredential());
-
                 // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
                 // allowing you to move your app seamlessly from development to production with no code changes.
-                config.UseCredential(new DefaultAzureCredential()); // failing in Azure App Service
-                //var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
-                //{
-                //    ExcludeEnvironmentCredential = true,
-                //    ExcludeManagedIdentityCredential = true,
-                //    //ExcludeVisualStudioCredential = true,
-                //    ExcludeAzureCliCredential = true,
-                //    ExcludeAzurePowerShellCredential = true,
-                //    ExcludeSharedTokenCacheCredential = true,
-                //    ExcludeVisualStudioCodeCredential = true,
-                //    ExcludeInteractiveBrowserCredential = true
-                //});
-                //config.UseCredential(credential);
+                // Enable Managed Service Identity for your Web App Service to be able to use Azure Key Vault
+                // and authorize web app to access the Key Vault
+                // Follow the link: https://www.loginradius.com/blog/engineering/guest-post/using-azure-key-vault-with-an-azure-web-app-in-c-sharp/
+                config.UseCredential(new DefaultAzureCredential());
 
                 // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
                 config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));

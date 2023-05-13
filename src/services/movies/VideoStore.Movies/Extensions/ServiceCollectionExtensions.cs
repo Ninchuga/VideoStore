@@ -121,9 +121,12 @@ namespace VideoStore.Movies.Extensions
             // to reduce the number of calls to authenticate.
             services.AddAzureClients(config =>
             {
-               // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
-               // allowing you to move your app seamlessly from development to production with no code changes.
-               config.UseCredential(new DefaultAzureCredential());
+                // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
+                // allowing you to move your app seamlessly from development to production with no code changes.
+                // Enable Managed Service Identity for your Web App Service to be able to use Azure Key Vault
+                // and authorize web app to access the Key Vault
+                // Follow the link: https://www.loginradius.com/blog/engineering/guest-post/using-azure-key-vault-with-an-azure-web-app-in-c-sharp/
+                config.UseCredential(new DefaultAzureCredential());
 
                 // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
                 config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));

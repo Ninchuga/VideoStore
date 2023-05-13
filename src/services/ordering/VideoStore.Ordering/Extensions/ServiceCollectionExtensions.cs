@@ -147,16 +147,24 @@ namespace VideoStore.Ordering.Extensions
 
         public static void ConfigureAzureClients(this IServiceCollection services, IConfiguration configuration)
         {
+            var keyVaultConfig = configuration.GetSection(OrderingConstants.KeyVaultSectionName).Get<KeyVaultConfig>()
+                ?? throw new NullReferenceException($"{nameof(KeyVaultConfig)} must have a value.");
+
             // You can also reduce the number of calls to Azure Key Vault by caching your SecretClient
             // or any other Key Vault SDK client.
             // clients are designed to reuse an HttpClient by default and cache authentication bearer tokens for service like Key Vault
             // to reduce the number of calls to authenticate.
             services.AddAzureClients(config =>
             {
+                // The DefaultAzureCredential chooses the best authentication mechanism based on your environment,
+                // allowing you to move your app seamlessly from development to production with no code changes.
+                // Enable Managed Service Identity for your Web App Service to be able to use Azure Key Vault
+                // and authorize web app to access the Key Vault
+                // Follow the link: https://www.loginradius.com/blog/engineering/guest-post/using-azure-key-vault-with-an-azure-web-app-in-c-sharp/
                 config.UseCredential(new DefaultAzureCredential());
 
-                // Assumes the deployed Key Vault URL is stored in a variable named KEYVAULT_URL.
-                config.AddSecretClient(new Uri(configuration["KeyVaultConfiguration:KeyVaultURL"]));
+                // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
+                config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));
             });
         }
     }
