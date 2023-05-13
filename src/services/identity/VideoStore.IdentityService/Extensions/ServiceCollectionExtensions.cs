@@ -117,7 +117,7 @@ namespace VideoStore.Movies.Extensions
                 {
                     ExcludeEnvironmentCredential = true,
                     ExcludeManagedIdentityCredential = true,
-                    ExcludeVisualStudioCredential = true,
+                    //ExcludeVisualStudioCredential = true,
                     ExcludeAzureCliCredential = true,
                     ExcludeAzurePowerShellCredential = true,
                     ExcludeSharedTokenCacheCredential = true,
