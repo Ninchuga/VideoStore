@@ -139,7 +139,7 @@ namespace VideoStore.Movies.Extensions
                 //config.UseCredential(credential);
 
                 // This will add SecretClient class to DI container which can be used in runtime to fetch data from AzureKeyVault
-                //config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));
+                config.AddSecretClient(new Uri(keyVaultConfig.KeyVaultUrl));
             });
         }
     }
