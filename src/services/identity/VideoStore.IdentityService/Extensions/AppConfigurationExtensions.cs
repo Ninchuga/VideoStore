@@ -14,9 +14,15 @@ namespace VideoStore.IdentityService.Extensions
             var keyVaultConfig = configuration.GetSection(IdentityConstants.KeyVaultSectionName).Get<KeyVaultConfig>()
                 ?? throw new NullReferenceException($"{nameof(KeyVaultConfig)} must have a value.");
 
-            var secretClient = new SecretClient(
-                new Uri(keyVaultConfig.KeyVaultUrl),
-                new ClientSecretCredential(keyVaultConfig.TenantId, keyVaultConfig.ClientId, keyVaultConfig.ClientSecret));
+            // One way
+            //var secretClient = new SecretClient(
+            //    new Uri(keyVaultConfig.KeyVaultUrl),
+            //    new ClientSecretCredential(keyVaultConfig.TenantId, keyVaultConfig.ClientId, keyVaultConfig.ClientSecret));
+
+            // Other way
+            // The DefaultAzureCredential attempts to authenticate by using multiple mechanisms
+            // environment, managed identity, Visual Studio, Azure CLI, Azure PowerShell, Interactive Browser
+            var secretClient = new SecretClient(new Uri(keyVaultConfig.KeyVaultUrl), new DefaultAzureCredential());
 
             // One way
             configurationBuilder.AddAzureKeyVault(secretClient, new AzureKeyVaultConfigurationOptions
