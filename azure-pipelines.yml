@@ -14,8 +14,8 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  dotNetFramework: 'net6.0'
-  dotNetVersion: '6.0.x'
+  dotNetFramework: 'net7.0'
+  dotNetVersion: '7.0.x'
   targetRuntime: 'linux-x64'
   dockerRegistryServiceConnection: 'videostoreregistry' # using service principal created for docker registry
   identityServiceImageRepository: 'identity'
@@ -24,10 +24,10 @@ variables:
 
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET 6 sdk'
+  displayName: 'Use .NET 7 sdk'
   inputs:
     packageType: 'sdk'
-    version: '6.x'
+    version: '7.x'
     includePreviewVersions: true
     
 - task: DotNetCoreCLI@2
