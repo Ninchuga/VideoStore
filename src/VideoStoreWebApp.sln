@@ -31,7 +31,9 @@ Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "VideoStore.Templates", "tem
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "functions", "functions", "{7CA0C5E4-9F1B-48E4-BCA2-3ED99099885B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoStore.OrderingFunction", "functions\VideoStore.OrderingFunction\VideoStore.OrderingFunction.csproj", "{5C9B8675-F58A-4275-BA2E-FCE912A377C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VideoStore.OrderingFunction", "functions\VideoStore.OrderingFunction\VideoStore.OrderingFunction.csproj", "{5C9B8675-F58A-4275-BA2E-FCE912A377C0}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{087A1850-D22B-49B7-A329-6BBDECCE9C50}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,6 +69,10 @@ Global
 		{5C9B8675-F58A-4275-BA2E-FCE912A377C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C9B8675-F58A-4275-BA2E-FCE912A377C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C9B8675-F58A-4275-BA2E-FCE912A377C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{087A1850-D22B-49B7-A329-6BBDECCE9C50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{087A1850-D22B-49B7-A329-6BBDECCE9C50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{087A1850-D22B-49B7-A329-6BBDECCE9C50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{087A1850-D22B-49B7-A329-6BBDECCE9C50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

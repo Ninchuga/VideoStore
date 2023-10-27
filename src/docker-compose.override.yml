@@ -1,0 +1,22 @@
+version: '3.4'
+
+services:
+  videostore.identityservice:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - UseInMemoryDatabase=true
+    ports:
+      - "80"
+
+  videostore.movies:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "80"
+
+  videostore.ordering:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "80"
+
