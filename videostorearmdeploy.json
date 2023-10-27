@@ -1,0 +1,97 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appServicePlanName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "appServicePlanSkuName": {
+            "type": "string",
+            "defaultValue": "F1",
+            "allowedValues": [
+                "F1",
+                "D1",
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3",
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+            ],
+            "metadata": {
+                "description": "Describes plan's pricing tier and capacity. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+            }
+        },
+        "acrName": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 50,
+            "metadata": {
+                "description": "Name of your Azure Container Registry"
+            }
+        },
+        "acrAdminUserEnabled": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Enable admin user that have push / pull permission to the registry."
+            }
+        },
+        "acrSku": {
+            "type": "string",
+            "metadata": {
+                "description": "Tier of your Azure Container Registry."
+            },
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+            ]
+        }
+    },
+    "functions": [],
+    "variables": {
+        "appHostingPlanNameVar": "[concat(parameters('appServicePlanName'), uniqueString(resourceGroup().id))]",
+        "acrNameVar" : "[concat(parameters('acrName'), uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "name": "[variables('appHostingPlanNameVar')]",
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2020-12-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('appServicePlanSkuName')]",
+                "capacity": 1
+            },
+            "tags": {
+                "displayName": "appServicePlan"
+            },
+            "properties": {
+                "name": "[variables('appHostingPlanNameVar')]",
+                "numberOfWorkers": 1
+            }
+        },
+        {
+            "name": "[variables('acrNameVar')]",
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2019-05-01",
+            "location": "[resourceGroup().location]",
+            "comments": "Container registry for storing docker images",
+            "sku": {
+                "name": "[parameters('acrSku')]",
+                "tier": "[parameters('acrSku')]"
+            },
+            "properties": {
+                "adminUserEnabled": "[parameters('acrAdminUserEnabled')]"
+            }
+        }
+    ],
+    "outputs": {}
+}

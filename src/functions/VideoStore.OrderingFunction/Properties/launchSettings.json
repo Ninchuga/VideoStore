@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "VideoStore.OrderingFunction": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7267",
+      "launchBrowser": false
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appServicePlanName": {
+      "value": "#arm_appServicePlanName#"
+    },
+    "appServicePlanSkuName": {
+      "value": "#arm_appServicePlanSkuName#"
+    },
+    "acrName": {
+      "value": "#arm_acrName#"
+    },
+    "acrAdminUserEnabled": {
+      "value": true
+    },
+    "acrSku": {
+      "value": "#arm_acrSku#"
+    },
+    "identityServiceWebAppName": {
+      "value": "#arm_identityServiceWebAppName#"
+    },
+    "videoStoreAppInsightsName": {
+      "value": "#arm_videoStoreAppInsightsName#"
+    }
+  }
+}

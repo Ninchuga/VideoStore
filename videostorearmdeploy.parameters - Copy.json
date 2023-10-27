@@ -1,0 +1,32 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appServicePlanName": {
+            "value": "myappserviceplan"
+        },
+        "appServicePlanSkuName": {
+            "value": "F1"
+        },
+        "acrName": {
+            "value": "videostoreacr"
+        },
+        "acrAdminUserEnabled": {
+            "value": true
+        },
+        "acrSku": {
+            "value": "Basic"
+        },
+        "keyVaultObjectId": {
+            "value": "ef6c8ff6-3cc9-4376-b438-238b71f0e25c"
+        },
+        "testParameterFromKeyVault": {
+            "reference": {
+              "keyVault": {
+                "id": "ef6c8ff6-3cc9-4376-b438-238b71f0e25c"
+              },
+              "secretName": "secretName"
+            }
+        }
+    }
+  }
