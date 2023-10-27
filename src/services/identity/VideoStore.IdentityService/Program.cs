@@ -46,14 +46,20 @@ try
     app.Logger.LogInformation("Starting web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
+    //if (app.Environment.IsDevelopment())
+    //{
+    //    app.UseSwagger();
+    //    app.UseSwaggerUI(options =>
+    //    {
+    //        options.SwaggerEndpoint("/swagger/V1/swagger.json", "Identity Service WebAPI");
+    //    });
+    //}
+
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/V1/swagger.json", "Identity Service WebAPI");
-        });
-    }
+        options.SwaggerEndpoint("/swagger/V1/swagger.json", "Identity Service WebAPI");
+    });
 
     app.UseMiddleware<ExceptionHandlerMiddleware>();
 
