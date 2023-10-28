@@ -8,19 +8,32 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
 using VideoStore.Bus;
-using VideoStore.Movies.Infrastrucutre;
 using VideoStore.Ordering.Constants;
 using VideoStore.Ordering.Handlers;
+using VideoStore.Ordering.Infrastrucutre;
 using VideoStore.Ordering.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Models;
+using VideoStore.Shared;
 
 namespace VideoStore.Ordering.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static void ConfigureDbContext(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureDbContext(this IServiceCollection services, IHostBuilder host, IConfiguration configuration, IWebHostEnvironment environment)
         {
-            services.AddDbContext<OrderingContext>(options =>
+            bool useInMemoryDb = configuration.GetValue<bool>(OrderingConstants.FeatureFlags.UseInMemoryDatabase);
+            if (useInMemoryDb)
+            {
+                services.AddDbContext<OrderingContext>(options =>
+                    options.UseInMemoryDatabase("OrderingDb"));
+                var serviceProvider = services.BuildServiceProvider();
+                var context = serviceProvider.GetService<OrderingContext>();
+                var logger = serviceProvider.GetService<ILogger<OrderingContextSeed>>();
+                OrderingContextSeed.SeedAsync(context, logger).Wait();
+            }
+            else
+            {
+                services.AddDbContext<OrderingContext>(options =>
                             options.UseSqlServer(configuration.GetConnectionString(OrderingConstants.OrderingConnectionStringKey), option =>
                             {
                                 option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
@@ -30,6 +43,13 @@ namespace VideoStore.Ordering.Extensions
                                     maxRetryDelay: TimeSpan.FromSeconds(10),
                                     errorNumbersToAdd: null);
                             }));
+
+                host.MigrateDatabase<OrderingContext>(services, (context, services) =>
+                {
+                    var logger = services.GetService<ILogger<OrderingContextSeed>>();
+                    OrderingContextSeed.SeedAsync(context, logger).Wait();
+                });
+            }
         }
 
         public static void ConfigureSwagger(this IServiceCollection services)

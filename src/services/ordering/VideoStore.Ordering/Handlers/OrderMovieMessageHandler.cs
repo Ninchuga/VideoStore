@@ -25,7 +25,6 @@ namespace VideoStore.Ordering.Handlers
                     {
                         UserEmail = message.UserEmail,
                         UserName = message.UserName,
-                        Price = message.Movies.Sum(movie => movie.Price),
                         Movies = MapToMoviesFrom(message.Movies)
                     };
 
@@ -43,7 +42,7 @@ namespace VideoStore.Ordering.Handlers
             return movies.Select(movie => new Models.Movie 
             { 
                 MovieRefId = movie.Id, 
-                MovieTitle = movie.Title
+                Title = movie.Title
             }).ToList();
         }
     }

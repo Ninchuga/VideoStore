@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VideoStore.Movies.Infrastrucutre.Repositories;
+using VideoStore.Ordering.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Models;
 
 namespace VideoStore.Ordering.Controllers

@@ -17,9 +17,21 @@ namespace VideoStore.Movies.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static void ConfigureDbContext(this IServiceCollection services, ConfigureHostBuilder host, IConfiguration configuration)
+        public static void ConfigureDbContext(this IServiceCollection services, IHostBuilder host, IConfiguration configuration)
         {
-            services.AddDbContext<MovieContext>(options =>
+            bool useInMemoryDb = configuration.GetValue<bool>(MoviesConstants.FeatureFlags.UseInMemoryDatabase);
+            if (useInMemoryDb)
+            {
+                services.AddDbContext<MovieContext>(options =>
+                    options.UseInMemoryDatabase("MoviesDb"));
+                var serviceProvider = services.BuildServiceProvider();
+                var context = serviceProvider.GetService<MovieContext>();
+                var logger = serviceProvider.GetService<ILogger<MovieContextSeed>>();
+                MovieContextSeed.SeedAsync(context, logger).Wait();
+            }
+            else
+            {
+                services.AddDbContext<MovieContext>(options =>
                             options.UseSqlServer(configuration[MoviesConstants.MoviesConnectionStringKey], option =>
                             {
                                 option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
@@ -30,11 +42,12 @@ namespace VideoStore.Movies.Extensions
                                     errorNumbersToAdd: null);
                             }));
 
-            host.MigrateDatabase<MovieContext>(services, (context, services) =>
-            {
-                var logger = services.GetService<ILogger<MovieContextSeed>>();
-                MovieContextSeed.SeedAsync(context, logger).Wait();
-            });
+                host.MigrateDatabase<MovieContext>(services, (context, services) =>
+                {
+                    var logger = services.GetService<ILogger<MovieContextSeed>>();
+                    MovieContextSeed.SeedAsync(context, logger).Wait();
+                });
+            }
         }
 
         public static void ConfigureSwagger(this IServiceCollection services)

@@ -9,5 +9,10 @@
         public const string RedisConnectionStringKey = "RedisConnectionString";
         public const string RedisMessagingStoreInstanceName = "messagingstore";
         public const string KeyVaultSectionName = "KeyVaultConfiguration";
+
+        public class FeatureFlags
+        {
+            public const string UseInMemoryDatabase = "UseInMemoryDatabase";
+        }
     }
 }

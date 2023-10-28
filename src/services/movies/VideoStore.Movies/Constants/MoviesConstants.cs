@@ -14,6 +14,11 @@
             public const string Subject = "sub";
             public const string UserId = "userId";
         }
+
+        public class FeatureFlags
+        {
+            public const string UseInMemoryDatabase = "UseInMemoryDatabase";
+        }
     }
     
 }

@@ -23,13 +23,15 @@ namespace VideoStore.Movies.Infrastrucutre
                 {
                     Genre = "Comedy",
                     Title = "Ace Ventura",
-                    ReleaseDate = new DateTime(1994, 2, 4)
+                    ReleaseDate = new DateTime(1994, 2, 4),
+                    Price = 30
                 },
                 new Movie
                 {
                     Genre = "Action",
                     Title = "Terminator",
-                    ReleaseDate = new DateTime(1985, 2, 21)
+                    ReleaseDate = new DateTime(1985, 2, 21),
+                    Price = 25
                 }
             };
         }

@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VideoStore.Movies", "servic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VideoStore.Bus", "shared\VideoStore.Bus\VideoStore.Bus.csproj", "{30C40994-AA11-4EAA-B074-9296C7EF83BF}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{5157C409-B9B1-43F9-ABD6-839770BB1EF7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ordering", "ordering", "{5157C409-B9B1-43F9-ABD6-839770BB1EF7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VideoStore.Ordering", "services\ordering\VideoStore.Ordering\VideoStore.Ordering.csproj", "{794242F4-E7AD-4A29-BCBC-D1A5276EBB31}"
 EndProject

@@ -11,7 +11,7 @@ using VideoStore.IdentityService.Constants;
 using VideoStore.IdentityService.Infrastrucutre;
 using VideoStore.IdentityService.Model;
 using VideoStore.IdentityService.Models;
-//using VideoStore.Shared;
+using VideoStore.Shared;
 
 namespace VideoStore.IdentityService.Extensions
 {
@@ -44,12 +44,12 @@ namespace VideoStore.IdentityService.Extensions
                             maxRetryDelay: TimeSpan.FromSeconds(10),
                             errorNumbersToAdd: null);
                     });
+                });
 
-                    //host.MigrateDatabase<IdentityContext>(services, (context, services) =>
-                    //{
-                    //    var logger = services.GetService<ILogger<IdentityContextSeed>>();
-                    //    IdentityContextSeed.SeedAsync(context, logger).Wait();
-                    //});
+                host.MigrateDatabase<IdentityContext>(services, (context, services) =>
+                {
+                    var logger = services.GetService<ILogger<IdentityContextSeed>>();
+                    IdentityContextSeed.SeedAsync(context, logger).Wait();
                 });
             }
         }

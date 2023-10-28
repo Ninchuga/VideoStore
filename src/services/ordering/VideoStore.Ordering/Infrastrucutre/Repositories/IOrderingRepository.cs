@@ -1,6 +1,6 @@
 ﻿using VideoStore.Ordering.Models;
 
-namespace VideoStore.Movies.Infrastrucutre.Repositories
+namespace VideoStore.Ordering.Infrastrucutre.Repositories
 {
     public interface IOrderingRepository
     {

@@ -1,6 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using VideoStore.Movies.Infrastrucutre;
+using VideoStore.Ordering.Infrastrucutre;
 using VideoStore.Ordering.Infrastrucutre.Repositories;
 
 namespace VideoStore.Ordering.Handlers

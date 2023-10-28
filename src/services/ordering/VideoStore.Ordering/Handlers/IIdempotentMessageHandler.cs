@@ -1,5 +1,5 @@
 ﻿using MassTransit;
-using VideoStore.Movies.Infrastrucutre;
+using VideoStore.Ordering.Infrastrucutre;
 
 namespace VideoStore.Ordering.Handlers
 {

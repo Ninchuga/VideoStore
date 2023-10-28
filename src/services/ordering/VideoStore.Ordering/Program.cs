@@ -1,9 +1,9 @@
 using Serilog;
 using System.IdentityModel.Tokens.Jwt;
-using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Constants;
 using VideoStore.Ordering.Extensions;
 using VideoStore.Ordering.Handlers;
+using VideoStore.Ordering.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Models;
 using VideoStore.Shared;
 
@@ -21,7 +21,7 @@ try
 
     builder.Configuration.ConfigureAzureKeyVault();
     builder.Services.ConfigureAzureClients(builder.Configuration);
-    builder.Services.ConfigureDbContext(builder.Configuration);
+    builder.Services.ConfigureDbContext(builder.Host, builder.Configuration, builder.Environment);
     builder.Services.AddRedisCaching(builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();

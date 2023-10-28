@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using VideoStore.Ordering.Models;
 
-namespace VideoStore.Movies.Infrastrucutre
+namespace VideoStore.Ordering.Infrastrucutre
 {
     public class OrderingContext : DbContext
     {
