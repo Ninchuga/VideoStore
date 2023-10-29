@@ -11,12 +11,14 @@ services:
   videostore.movies:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - UseInMemoryDatabase=true 
     ports:
       - "80"
 
   videostore.ordering:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - UseInMemoryDatabase=true 
     ports:
       - "80"
 
