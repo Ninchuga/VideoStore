@@ -34,7 +34,6 @@ namespace VideoStore.IdentityService.Extensions
             else
             {
                 services.AddDbContext<IdentityContext>(options =>
-                {
                     options.UseSqlServer(configuration[IdentityConstants.IdentityConnectionStringKey], option =>
                     {
                         option.MigrationsAssembly(typeof(Program).GetTypeInfo().Assembly.GetName().Name);
@@ -43,8 +42,7 @@ namespace VideoStore.IdentityService.Extensions
                             maxRetryCount: 10,
                             maxRetryDelay: TimeSpan.FromSeconds(10),
                             errorNumbersToAdd: null);
-                    });
-                });
+                    }));
 
                 host.MigrateDatabase<IdentityContext>(services, (context, services) =>
                 {

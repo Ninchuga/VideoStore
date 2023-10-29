@@ -6,6 +6,13 @@ namespace VideoStore.Movies.Infrastrucutre
     {
         public static async Task SeedAsync(MovieContext context, ILogger<MovieContextSeed>? logger)
         {
+            if (context is null)
+            {
+                logger?.LogError("Context {Context} cannot be null while executing {ClassName}{MethodName}",
+                    nameof(MovieContext), nameof(MovieContextSeed), nameof(SeedAsync));
+                return;
+            }
+
             var movies = context.Movies;
             if (!movies.Any())
             {

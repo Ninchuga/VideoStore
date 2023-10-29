@@ -6,6 +6,13 @@ namespace VideoStore.Ordering.Infrastrucutre
     {
         public static async Task SeedAsync(OrderingContext context, ILogger<OrderingContextSeed>? logger)
         {
+            if (context is null)
+            {
+                logger?.LogError("Context {Context} cannot be null while executing {ClassName}{MethodName}",
+                    nameof(OrderingContext), nameof(OrderingContextSeed), nameof(SeedAsync));
+                return;
+            }
+
             var movies = context.Orders;
             if (!movies.Any())
             {

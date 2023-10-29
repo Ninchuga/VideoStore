@@ -6,6 +6,13 @@ namespace VideoStore.IdentityService.Infrastrucutre
     {
         public static async Task SeedAsync(IdentityContext context, ILogger<IdentityContextSeed>? logger)
         {
+            if(context is null)
+            {
+                logger?.LogError("Context {Context} cannot be null while executing {ClassName}{MethodName}",
+                    nameof(IdentityContext), nameof(IdentityContextSeed), nameof(SeedAsync));
+                return;
+            }
+
             var users = context.Users;
             if (!users.Any())
             {
