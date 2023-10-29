@@ -91,7 +91,11 @@ namespace VideoStore.Ordering.Extensions
             var jwtConfig = configuration.GetSection(OrderingConstants.JwtConfigurationName).Get<JwtConfig>()
                 ?? throw new NullReferenceException($"{nameof(JwtConfig)} must have a value.");
 
-            string jwtSecret = configuration[OrderingConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+            if (string.IsNullOrWhiteSpace(jwtConfig.Secret))
+            {
+                string jwtSecret = configuration[OrderingConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+                jwtConfig.Secret = jwtSecret;
+            }
 
             services.AddAuthentication(opt =>
             {
@@ -109,20 +113,27 @@ namespace VideoStore.Ordering.Extensions
                         ValidateIssuerSigningKey = true,
                         ValidAudience = jwtConfig.Audience,
                         ValidIssuer = jwtConfig.Issuer,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Secret))
                     };
                 });
         }
 
-        public static void ConfigureServiceBus(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServiceBus(this IServiceCollection services, IConfiguration configuration, Serilog.ILogger logger)
         {
+            string serviceBusConnectionString = configuration[OrderingConstants.AzureServiceBusConnectionStringKey];
+            if(string.IsNullOrWhiteSpace(serviceBusConnectionString))
+            {
+                logger.Warning("Service bus connection string not found. Cannot configure service bus.");
+                return;
+            }
+
             services.AddMassTransit(config =>
             {
                 config.AddConsumer<OrderMovieMessageHandler>();
 
                 config.UsingAzureServiceBus((context, cfg) =>
                 {
-                    cfg.Host(configuration[OrderingConstants.AzureServiceBusConnectionStringKey]);
+                    cfg.Host(serviceBusConnectionString);
 
                     // We can configure duplication and message retries on a global level for all queues and topics
                     //cfg.UseMessageRetry(r => r.Interval(retryCount: 3, TimeSpan.FromSeconds(5)));
@@ -154,11 +165,15 @@ namespace VideoStore.Ordering.Extensions
             });
         }
 
-        public static void AddRedisCaching(this IServiceCollection services, IConfiguration configuration)
+        public static void AddRedisCaching(this IServiceCollection services, IConfiguration configuration, Serilog.ILogger logger)
         {
+            string redisConnectionString = configuration[OrderingConstants.RedisConnectionStringKey];
+            if(string.IsNullOrWhiteSpace(redisConnectionString))
+                logger.Warning("Redis connection string not found.");
+
             services.AddStackExchangeRedisCache(options =>
             {
-                options.Configuration = configuration[OrderingConstants.RedisConnectionStringKey];
+                options.Configuration = redisConnectionString;
                 options.InstanceName = OrderingConstants.RedisMessagingStoreInstanceName;
             });
 

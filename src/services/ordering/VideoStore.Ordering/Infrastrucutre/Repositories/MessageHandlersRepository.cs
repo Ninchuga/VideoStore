@@ -8,7 +8,7 @@ namespace VideoStore.Ordering.Infrastrucutre.Repositories
 
         public MessageHandlersRepository(IDistributedCache redisCache)
         {
-            _redisCache = redisCache;
+            _redisCache = redisCache ?? throw new ArgumentNullException($"{nameof(MessageHandlersRepository)} argument {nameof(IDistributedCache)} is null.");
         }
 
         public async Task DeleteProcessingMessage(string key) =>

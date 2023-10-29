@@ -91,7 +91,11 @@ namespace VideoStore.IdentityService.Extensions
             var jwtConfig = configuration.GetSection(IdentityConstants.JwtConfigurationName).Get<JwtConfig>()
                 ?? throw new ArgumentNullException($"{nameof(JwtConfig)} must have a value.");
 
-            string jwtSecret = configuration[IdentityConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+            if(string.IsNullOrWhiteSpace(jwtConfig.Secret))
+            {
+                string jwtSecret = configuration[IdentityConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+                jwtConfig.Secret = jwtSecret;
+            }
 
             services.AddAuthentication(opt =>
             {
@@ -109,7 +113,7 @@ namespace VideoStore.IdentityService.Extensions
                         ValidateIssuerSigningKey = true,
                         ValidAudience = jwtConfig.Audience,
                         ValidIssuer = jwtConfig.Issuer,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Secret))
                     };
                 });
         }

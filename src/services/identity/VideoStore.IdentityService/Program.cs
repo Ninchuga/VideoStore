@@ -18,7 +18,9 @@ try
 
     logger.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    builder.Configuration.ConfigureAzureKeyVault();
+    if(!builder.Environment.IsDevelopment())
+        builder.Configuration.ConfigureAzureKeyVault();
+
     builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
     builder.Services.ConfigureAuthentication(builder.Configuration);

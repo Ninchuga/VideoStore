@@ -116,6 +116,9 @@ namespace VideoStore.Movies.Controllers
             if (!int.TryParse(userId, out int parsedUserId))
                 return BadRequest($"User id {userId} is not a valid integer value.");
 
+            if (_publishEndpoint is null)
+                throw new Exception($"{nameof(IPublishEndpoint)} argument in {nameof(MoviesController)} cannot be null.");
+
             var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder);
             await _publishEndpoint.Publish(orderMovieMessage, context =>
             {

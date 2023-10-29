@@ -89,7 +89,11 @@ namespace VideoStore.Movies.Extensions
             var jwtConfig = configuration.GetSection(MoviesConstants.JwtConfigurationName).Get<JwtConfig>()
                 ?? throw new ArgumentNullException($"{nameof(JwtConfig)} must have a value.");
 
-            string jwtSecret = configuration[MoviesConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+            if (string.IsNullOrWhiteSpace(jwtConfig.Secret))
+            {
+                string jwtSecret = configuration[MoviesConstants.JwtSecretKeyName] ?? throw new NullReferenceException("Jwt secret must have a value.");
+                jwtConfig.Secret = jwtSecret;
+            }
 
             services.AddAuthentication(opt =>
             {
@@ -107,18 +111,25 @@ namespace VideoStore.Movies.Extensions
                         ValidateIssuerSigningKey = true,
                         ValidAudience = jwtConfig.Audience,
                         ValidIssuer = jwtConfig.Issuer,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Secret))
                     };
                 });
         }
 
-        public static void ConfigureServiceBus(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServiceBus(this IServiceCollection services, IConfiguration configuration, Serilog.ILogger logger)
         {
+            string serviceBusConnectionString = configuration[MoviesConstants.AzureServiceBusConnectionStringKey];
+            if (string.IsNullOrWhiteSpace(serviceBusConnectionString))
+            {
+                logger.Warning("Service bus connection string not found. Cannot configure service bus.");
+                return;
+            }
+
             services.AddMassTransit(config =>
             {
                 config.UsingAzureServiceBus((context, cfg) =>
                 {
-                    cfg.Host(configuration[MoviesConstants.AzureServiceBusConnectionStringKey]);
+                    cfg.Host(serviceBusConnectionString);
                 });
             });
         }

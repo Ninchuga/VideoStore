@@ -2,19 +2,19 @@ version: '3.4'
 
 services:
   videostore.identityservice:
-    image: ${DOCKER_REGISTRY-}videostoreidentityservice
+    image: ${DOCKER_REGISTRY-}videostore.identityservice
     build:
       context: .
       dockerfile: services/identity/VideoStore.IdentityService/Dockerfile
 
   videostore.movies:
-    image: ${DOCKER_REGISTRY-}videostoremovies
+    image: ${DOCKER_REGISTRY-}videostore.movies
     build:
       context: .
       dockerfile: services/movies/VideoStore.Movies/Dockerfile
 
   videostore.ordering:
-    image: ${DOCKER_REGISTRY-}videostoreordering
+    image: ${DOCKER_REGISTRY-}videostore.ordering
     build:
       context: .
       dockerfile: services/ordering/VideoStore.Ordering/Dockerfile

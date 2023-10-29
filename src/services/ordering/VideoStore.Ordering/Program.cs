@@ -19,10 +19,12 @@ try
 
     logger.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    builder.Configuration.ConfigureAzureKeyVault();
+    if (!builder.Environment.IsDevelopment())
+        builder.Configuration.ConfigureAzureKeyVault();
+
     builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration, builder.Environment);
-    builder.Services.AddRedisCaching(builder.Configuration);
+    builder.Services.AddRedisCaching(builder.Configuration, logger);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();
@@ -30,7 +32,7 @@ try
     builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(OrderingConstants.JwtConfigurationName));
     builder.Services.AddTransient(typeof(IIdempotentMessageHandler<>), typeof(IdempotentMessageHandlerDecorator<>));
     builder.Services.ConfigureAuthentication(builder.Configuration);
-    builder.Services.ConfigureServiceBus(builder.Configuration);
+    builder.Services.ConfigureServiceBus(builder.Configuration, logger);
 
     var app = builder.Build();
 
