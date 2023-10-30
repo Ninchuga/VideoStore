@@ -36,7 +36,8 @@ try
     });
 
     // Add this line of code to enable Profiler from nuget -> Microsoft.ApplicationInsights.Profiler.AspNetCore
-    //builder.Services.AddServiceProfiler(); 
+    //builder.Services.AddServiceProfiler();
+    builder.Services.AddRouting(options => { options.LowercaseUrls = true; options.LowercaseQueryStrings = true; });
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();

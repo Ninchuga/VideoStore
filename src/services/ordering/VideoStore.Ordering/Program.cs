@@ -25,6 +25,7 @@ try
     builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration, builder.Environment);
     builder.Services.AddRedisCaching(builder.Configuration, logger);
+    builder.Services.AddRouting(options => { options.LowercaseUrls = true; options.LowercaseQueryStrings = true; });
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();

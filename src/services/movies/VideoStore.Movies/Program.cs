@@ -23,6 +23,7 @@ try
 
     builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
+    builder.Services.AddRouting(options => { options.LowercaseUrls = true; options.LowercaseQueryStrings = true; });
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();
