@@ -5,20 +5,30 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - UseInMemoryDatabase=true
+      - RunningInDocker=true
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID} # azure env variables must be used in order to connect to Azure KeyVault from docker container
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
     ports:
-      - "80"
+      - "8001:80"
 
   videostore.movies:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - UseInMemoryDatabase=true 
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET} 
     ports:
-      - "80"
+      - "8002:80"
 
   videostore.ordering:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - UseInMemoryDatabase=true 
+      - UseInMemoryDatabase=true
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
     ports:
-      - "80"
+      - "8003:80"
 

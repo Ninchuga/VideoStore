@@ -13,6 +13,7 @@
         public class FeatureFlags
         {
             public const string UseInMemoryDatabase = "UseInMemoryDatabase";
+            public const string RunningInDocker = "RunningInDocker";
         }
     }
 }
