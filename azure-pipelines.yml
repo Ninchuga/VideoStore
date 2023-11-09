@@ -16,7 +16,7 @@ variables:
   buildConfiguration: 'Release'
   dotNetFramework: 'net7.0'
   dotNetVersion: '7.0.x'
-  targetRuntime: 'linux-x64'
+  #targetRuntime: 'linux-x64'
   dockerRegistryServiceConnection: 'videostoreregistry' # using service principal created for docker registry
   identityServiceImageRepository: 'identity'
   identityServiceDockerfilePath: '$(Build.SourcesDirectory)/src/services/identity/VideoStore.IdentityService/Dockerfile'
@@ -46,22 +46,23 @@ steps:
    projects: '**/*.sln'
    arguments: '--configuration $(buildConfiguration)'
 
-# - task: DotNetCoreCLI@2
-#   displayName: 'Publish artifacts'
-#   inputs:
-#     command: publish
-#     publishWebProjects: true
-#     #projects: 'src/services/*/*/*.csproj'
-#     arguments: '--configuration $(BuildConfiguration) --framework $(dotNetFramework) --output $(Build.ArtifactStagingDirectory)'
-#     zipAfterPublish: true
-
-# Publish it as .NET 6 self-contained application for linux runtime
+# Publish it as .NET 7 application for windows runtime
 - task: DotNetCoreCLI@2
+  displayName: 'Publish artifacts'
   inputs:
     command: publish
-    publishWebProjects: True
+    publishWebProjects: true # If the publishWebProjects is true, the 'projects' property value is skipped
+    #projects: 'src/services/*/*/*.csproj'
     arguments: '--configuration $(BuildConfiguration) --framework $(dotNetFramework) --output $(Build.ArtifactStagingDirectory)'
-    zipAfterPublish: True
+    zipAfterPublish: true
+
+# Publish it as .NET 7 self-contained application for linux runtime
+# - task: DotNetCoreCLI@2
+#   inputs:
+#     command: publish
+#     publishWebProjects: True
+#     arguments: '--configuration $(BuildConfiguration) --framework $(dotNetFramework) --runtime $(targetRuntime) --self-contained true --output $(Build.ArtifactStagingDirectory)'
+#     zipAfterPublish: True
   
 # Package the file and uploads them as an artifact of the build -> new way
 - task: PublishPipelineArtifact@1
