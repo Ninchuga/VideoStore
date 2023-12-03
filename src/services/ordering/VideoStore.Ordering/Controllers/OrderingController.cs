@@ -34,9 +34,17 @@ namespace VideoStore.Ordering.Controllers
         {
             var order = request.Map();
 
-            _orderingRepository.AddOrder(order);
+            try
+            {
+                _orderingRepository.AddOrder(order);
+                await _orderingRepository.SaveChanges();
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Unexpected error occurred with message: {ex.Message}");
+            }
         }
     }
 }

@@ -36,7 +36,7 @@ namespace VideoStore.Movies.Services
 
             
             var httpClient = _httpClientFactory.CreateClient(MoviesConstants.OrderingApiHttpClientName);
-            httpClient.DefaultRequestHeaders.Add("Bearer", await GetAccessToken());
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await GetAccessToken());
             var request = new PlaceOrderRequest(userName, userEmail, moviesToOrder.Map());
             var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
             var httpResponseMessage = await httpClient.PostAsync("api/ordering/placeorder", requestContent, cancellationToken);
@@ -84,11 +84,8 @@ namespace VideoStore.Movies.Services
             return movies;
         }
 
-        private async Task<string> GetAccessToken()
-        {
-            var token = await _httpContextAccessor.HttpContext.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+        private async Task<string> GetAccessToken() =>
+            await _httpContextAccessor.HttpContext.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
 
-            return token;
-        }
     }
 }
