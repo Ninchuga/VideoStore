@@ -1,4 +1,4 @@
-﻿namespace VideoStore.Ordering.Models
+﻿namespace VideoStore.Ordering.Models.Configs
 {
     public class KeyVaultConfig
     {

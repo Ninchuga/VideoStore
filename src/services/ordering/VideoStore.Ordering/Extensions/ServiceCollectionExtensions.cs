@@ -12,7 +12,7 @@ using VideoStore.Ordering.Constants;
 using VideoStore.Ordering.Handlers;
 using VideoStore.Ordering.Infrastrucutre;
 using VideoStore.Ordering.Infrastrucutre.Repositories;
-using VideoStore.Ordering.Models;
+using VideoStore.Ordering.Models.Configs;
 using VideoStore.Shared;
 
 namespace VideoStore.Ordering.Extensions

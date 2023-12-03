@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VideoStore.Ordering.Models;
+using VideoStore.Ordering.Models.Entities;
 
 namespace VideoStore.Ordering.Infrastrucutre.Repositories
 {

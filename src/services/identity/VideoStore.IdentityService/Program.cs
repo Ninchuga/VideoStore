@@ -18,7 +18,8 @@ try
 
     logger.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
-    if(!builder.Environment.IsDevelopment())
+    // If Env == Development use configuration from appsettings.Development.json
+    if (!builder.Environment.IsDevelopment())
         builder.Configuration.ConfigureAzureKeyVault();
 
     builder.Services.ConfigureAzureClients(builder.Configuration);

@@ -1,9 +1,11 @@
+using Microsoft.Net.Http.Headers;
 using Serilog;
 using System.IdentityModel.Tokens.Jwt;
 using VideoStore.Movies.Constants;
 using VideoStore.Movies.Extensions;
 using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Movies.Models;
+using VideoStore.Movies.Services;
 using VideoStore.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,15 +20,25 @@ try
 
     logger.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
+    // If Env == Development use configuration from appsettings.Development.json
     if (!builder.Environment.IsDevelopment())
         builder.Configuration.ConfigureAzureKeyVault();
+
+    builder.Services.AddHttpClient(MoviesConstants.OrderingApiHttpClientName, httpClient =>
+    {
+        httpClient.BaseAddress = new Uri(builder.Configuration.GetValue<string>(MoviesConstants.OrderingApiBaseUrl));
+        httpClient.DefaultRequestHeaders.Clear();
+        httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+    });
 
     builder.Services.ConfigureAzureClients(builder.Configuration);
     builder.Services.ConfigureDbContext(builder.Host, builder.Configuration);
     builder.Services.AddRouting(options => { options.LowercaseUrls = true; options.LowercaseQueryStrings = true; });
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.ConfigureSwagger();
+    builder.Services.AddTransient<OrderService>();
     builder.Services.AddTransient<IMovieRepository, MovieRepository>();
     builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection(MoviesConstants.JwtConfigurationName));
     builder.Services.ConfigureAuthentication(builder.Configuration);

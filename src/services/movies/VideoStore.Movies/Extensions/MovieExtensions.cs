@@ -19,5 +19,18 @@ namespace VideoStore.Movies.Extensions
 
         public static IReadOnlyList<MovieDTO> ToDtos(this IEnumerable<Movie> movies) =>
             movies.Select(x => x.ToDto()).ToList();
+
+        public static Bus.Messages.Movie ToBusMessage(this Movie movie) =>
+            new(movie.Id, movie.Title, movie.Price);
+
+        public static IReadOnlyList<Bus.Messages.Movie> ToBusMessages(this IEnumerable<Movie> movies) =>
+            movies.Select(x => x.ToBusMessage()).ToList();
+
+        public static OrderMovie Map(this Movie movie) =>
+            new(movie.Id, movie.Title, movie.Price);
+
+        public static IReadOnlyList<OrderMovie> Map(this IEnumerable<Movie> movies) =>
+            movies.Select(x => x.Map()).ToList();
+
     }
 }

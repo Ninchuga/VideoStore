@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using VideoStore.Bus.Messages;
-using VideoStore.Ordering.Models;
+using VideoStore.Ordering.Extensions;
+using VideoStore.Ordering.Models.Entities;
 
 namespace VideoStore.Ordering.Handlers
 {
@@ -25,7 +26,7 @@ namespace VideoStore.Ordering.Handlers
                     {
                         UserEmail = message.UserEmail,
                         UserName = message.UserName,
-                        Movies = MapToMoviesFrom(message.Movies)
+                        Movies = message.Movies.Map()
                     };
 
                     if (cancellationTokenSource.IsCancellationRequested)
@@ -37,13 +38,6 @@ namespace VideoStore.Ordering.Handlers
                 });
         }
 
-        private static List<Models.Movie> MapToMoviesFrom(IEnumerable<Bus.Messages.Movie> movies)
-        {
-            return movies.Select(movie => new Models.Movie 
-            { 
-                MovieRefId = movie.Id, 
-                Title = movie.Title
-            }).ToList();
-        }
+       
     }
 }

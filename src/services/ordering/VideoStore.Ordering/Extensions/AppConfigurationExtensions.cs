@@ -2,7 +2,7 @@
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using VideoStore.Ordering.Constants;
-using VideoStore.Ordering.Models;
+using VideoStore.Ordering.Models.Configs;
 
 namespace VideoStore.Ordering.Extensions
 {

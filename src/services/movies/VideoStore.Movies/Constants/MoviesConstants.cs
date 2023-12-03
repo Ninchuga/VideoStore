@@ -7,6 +7,8 @@
         public const string MoviesConnectionStringKey = "MoviesConnectionString";
         public const string AzureServiceBusConnectionStringKey = "AzureServiceBusConnectionString";
         public const string KeyVaultSectionName = "KeyVaultConfiguration";
+        public const string OrderingApiBaseUrl = "OrderingApiBaseUrl";
+        public const string OrderingApiHttpClientName = "OrderingApi";
 
         public class TokenClaimTypes
         {

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VideoStore.Ordering.Extensions;
 using VideoStore.Ordering.Infrastrucutre.Repositories;
 using VideoStore.Ordering.Models;
+using VideoStore.Ordering.Models.Entities;
 
 namespace VideoStore.Ordering.Controllers
 {
@@ -24,6 +26,17 @@ namespace VideoStore.Ordering.Controllers
             var orders = await _orderingRepository.GetOrders();
 
             return Ok(orders);
+        }
+
+        [HttpPost]
+        [Route("placeOrder")]
+        public async Task<ActionResult> PlaceOrder([FromBody] PlaceOrderRequest request)
+        {
+            var order = request.Map();
+
+            _orderingRepository.AddOrder(order);
+
+            return Ok();
         }
     }
 }

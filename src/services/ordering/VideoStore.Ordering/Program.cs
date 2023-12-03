@@ -4,7 +4,7 @@ using VideoStore.Ordering.Constants;
 using VideoStore.Ordering.Extensions;
 using VideoStore.Ordering.Handlers;
 using VideoStore.Ordering.Infrastrucutre.Repositories;
-using VideoStore.Ordering.Models;
+using VideoStore.Ordering.Models.Configs;
 using VideoStore.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +19,7 @@ try
 
     logger.Information("Configuring web host ({ApplicationContext})...", builder.Environment.ApplicationName);
 
+    // If Env == Development use configuration from appsettings.Development.json
     if (!builder.Environment.IsDevelopment())
         builder.Configuration.ConfigureAzureKeyVault();
 

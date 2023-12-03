@@ -2,13 +2,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using VideoStore.Bus.Messages;
 using VideoStore.Movies.Constants;
 using VideoStore.Movies.DTOs;
 using VideoStore.Movies.Extensions;
 using VideoStore.Movies.Infrastrucutre.Repositories;
 using VideoStore.Shared;
 using Movie = VideoStore.Movies.Models.Movie;
+using VideoStore.Movies.Services;
 
 namespace VideoStore.Movies.Controllers
 {
@@ -20,12 +20,17 @@ namespace VideoStore.Movies.Controllers
         private readonly IMovieRepository _movieRepository;
         private readonly ILogger<MoviesController> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly OrderService _orderService;
 
-        public MoviesController(IMovieRepository movieRepository, ILogger<MoviesController> logger, IServiceProvider serviceProvider)
+        public MoviesController(IMovieRepository movieRepository, ILogger<MoviesController> logger,
+            IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory, OrderService orderService)
         {
             _movieRepository = movieRepository;
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _httpClientFactory = httpClientFactory;
+            _orderService = orderService;
         }
 
         [HttpGet]
@@ -85,7 +90,7 @@ namespace VideoStore.Movies.Controllers
                 _logger.LogError(ex, "{ExceptionName} occurred while trying to update the movie movie with id {MovieId}.", nameof(DbUpdateConcurrencyException), id);
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception occurred while trying to update the movie with id {MovieId}.", id);
                 return StatusCode(StatusCodes.Status500InternalServerError);
@@ -131,49 +136,26 @@ namespace VideoStore.Movies.Controllers
                 return result.AddError("At least one movie id must be specified.");
 
             string userEmail = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Email, StringComparison.OrdinalIgnoreCase))?.Value;
-            if(string.IsNullOrWhiteSpace(userEmail))
+            if (string.IsNullOrWhiteSpace(userEmail))
                 return result.AddError("User email must have a value.");
 
             string userName = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.Subject, StringComparison.OrdinalIgnoreCase))?.Value;
-            if(string.IsNullOrWhiteSpace(userName))
+            if (string.IsNullOrWhiteSpace(userName))
                 return result.AddError("User name must have a value.");
 
             string userId = User.Claims?.FirstOrDefault(c => c.Type.Equals(MoviesConstants.TokenClaimTypes.UserId, StringComparison.OrdinalIgnoreCase))?.Value;
             if (!int.TryParse(userId, out int parsedUserId))
                 return result.AddError($"User id {userId} is not a valid integer value.");
 
-            var moviesToOrder = new List<Bus.Messages.Movie>();
-            foreach (var movieId in moviesId)
-            {
-                var movie = await _movieRepository.GetMovieBy(movieId, cancellationToken);
-                if (movie is null)
-                {
-                    result.AddWarning($"Movie with id {movieId} not found.");
-                    continue;
-                }
-
-                moviesToOrder.Add(new Bus.Messages.Movie(movie.Id, movie.Title, movie.Price));
-            }
-
-            if(moviesToOrder.Count == 0)
-                return result.AddWarning($"Movies with ids: '{string.Join(", ", moviesId)}' were not found.");
-
             var publishEndpoint = _serviceProvider.GetService<IPublishEndpoint>();
-            if (publishEndpoint is null)
+            if (publishEndpoint is null) // Use HTTP communication
             {
-                _logger.LogError("{Controller}.{Action} service {ServiceName} cannot be resolved.", nameof(MoviesController), nameof(OrderMovies) , nameof(IPublishEndpoint));
-                return result.AddError($"Service '{nameof(IPublishEndpoint)}' could not be resolved.");
+                _logger.LogWarning("{Controller}.{Action} service {ServiceName} cannot be resolved.", nameof(MoviesController), nameof(OrderMovies), nameof(IPublishEndpoint));
+
+                return await _orderService.PlaceOrder(moviesId, cancellationToken, userName, userEmail);
             }
 
-            var orderMovieMessage = new OrderMovieMessage(parsedUserId, userName, userEmail, moviesToOrder);
-            await publishEndpoint.Publish(orderMovieMessage, context =>
-            {
-                context.MessageId = Guid.NewGuid(); // new Guid("6ee234bb-c211-4756-bad1-c1c6e45c1b58");
-                context.CorrelationId = Guid.NewGuid();
-                context.TimeToLive = TimeSpan.FromMinutes(60); // if not consumed after this ttl, message will end up in dead-letter queue
-            }, cancellationToken: cancellationToken);
-
-            return result;
+            return await _orderService.PublishPlaceOrderMessage(moviesId, cancellationToken, userName, userEmail, publishEndpoint);
         }
     }
 }
