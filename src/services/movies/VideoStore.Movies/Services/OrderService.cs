@@ -25,10 +25,10 @@ namespace VideoStore.Movies.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<BaseResult> PlaceOrder(IEnumerable<int> moviesId, CancellationToken cancellationToken,
+        public async Task<Result> PlaceOrder(IEnumerable<int> moviesId, CancellationToken cancellationToken,
             string userName, string userEmail)
         {
-            var result = new BaseResult();
+            var result = new Result();
 
             var moviesToOrder = await GetMoviesToOrder(moviesId, result, cancellationToken);
             if (moviesToOrder.Count == 0)
@@ -46,10 +46,10 @@ namespace VideoStore.Movies.Services
             return result;
         }
 
-        public async Task<BaseResult> PublishPlaceOrderMessage(IEnumerable<int> moviesId, CancellationToken cancellationToken,
+        public async Task<Result> PublishPlaceOrderMessage(IEnumerable<int> moviesId, CancellationToken cancellationToken,
             string userName, string userEmail, IPublishEndpoint publishEndpoint)
         {
-            var result = new BaseResult();
+            var result = new Result();
 
             var moviesToOrder = await GetMoviesToOrder(moviesId, result, cancellationToken);
             if (moviesToOrder.Count == 0)
@@ -66,7 +66,7 @@ namespace VideoStore.Movies.Services
             return result;
         }
 
-        private async Task<List<Models.Movie>> GetMoviesToOrder(IEnumerable<int> moviesId, BaseResult result, CancellationToken cancellationToken)
+        private async Task<List<Models.Movie>> GetMoviesToOrder(IEnumerable<int> moviesId, Result result, CancellationToken cancellationToken)
         {
             var movies = new List<Models.Movie>();
             foreach (var movieId in moviesId)

@@ -128,9 +128,9 @@ namespace VideoStore.Movies.Controllers
 
         [HttpPost]
         [Route("orderMovies")]
-        public async Task<BaseResult> OrderMovies([FromBody] IEnumerable<int> moviesId, CancellationToken cancellationToken)
+        public async Task<Result> OrderMovies([FromBody] IEnumerable<int> moviesId, CancellationToken cancellationToken)
         {
-            var result = new BaseResult();
+            var result = new Result();
 
             if (!moviesId.Any())
                 return result.AddError("At least one movie id must be specified.");
