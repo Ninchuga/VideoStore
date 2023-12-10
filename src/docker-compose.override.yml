@@ -20,7 +20,7 @@ services:
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
       - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
-      - OrderingApiBaseUrl=http://localhost:5003
+      - OrderingApiBaseUrl=http://host.docker.internal:8003
     ports:
       - "8002:80"
 

@@ -73,13 +73,13 @@ namespace VideoStore.Movies.Controllers
         }
 
         [HttpPut]
-        [Route("updateMovie/{id}")]
-        public async Task<IActionResult> UpdateMovie([FromRoute] int id, [FromBody] MovieDTO movie, CancellationToken cancellationToken)
+        [Route("updateMovie")]
+        public async Task<IActionResult> UpdateMovie([FromBody] MovieDTO movie, CancellationToken cancellationToken)
         {
-            if (id == 0)
+            if (movie is null || movie.Id == 0)
                 return BadRequest();
 
-            _movieRepository.UpsertMovie(movie.ToEntity(id));
+            _movieRepository.UpsertMovie(movie.ToEntity());
 
             try
             {
@@ -87,12 +87,12 @@ namespace VideoStore.Movies.Controllers
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                _logger.LogError(ex, "{ExceptionName} occurred while trying to update the movie movie with id {MovieId}.", nameof(DbUpdateConcurrencyException), id);
+                _logger.LogError(ex, "{ExceptionName} occurred while trying to update the movie movie with id {MovieId}.", nameof(DbUpdateConcurrencyException), movie.Id);
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception occurred while trying to update the movie with id {MovieId}.", id);
+                _logger.LogError(ex, "Unhandled exception occurred while trying to update the movie with id {MovieId}.", movie.Id);
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
